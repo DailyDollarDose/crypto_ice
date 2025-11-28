@@ -8,76 +8,6 @@ import { cn } from '@/lib/utils';
 import ParticleAnimation from '@/components/particle-animation';
 import Link from 'next/link';
 
-const CryptoIcon = ({ coin }: { coin: string }) => {
-  const icons: { [key: string]: React.ReactNode } = {
-    BTC: (
-      <svg
-        role="img"
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-8 w-8 text-yellow-400"
-        fill="currentColor"
-      >
-        <title>Bitcoin</title>
-        <path d="M11.23 18.445v2.332h1.537v-2.332h1.538V5.556h-1.538V3.222h-1.537v2.334H9.692v12.89h1.538zm0-1.533H9.692v-2.334h1.538v2.334zm0-3.867H9.692V9.178h1.538v3.867zm1.537-5.4h-1.537V5.556h1.537v2.332z" />
-      </svg>
-    ),
-    ETH: (
-      <svg
-        role="img"
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-8 w-8 text-blue-400"
-        fill="currentColor"
-      >
-        <title>Ethereum</title>
-        <path d="M11.944 17.97L4.58 13.62 11.944 24l7.365-10.38-7.365 4.35zM12.056 0L4.69 12.223l7.366 4.35L19.418 12.22 12.056 0z" />
-      </svg>
-    ),
-    BNB: (
-      <svg
-        role="img"
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-8 w-8 text-yellow-500"
-        fill="currentColor"
-      >
-        <title>BNB</title>
-        <path d="M16.11.063l-4.11 4.103-4.11-4.104L0 7.953l4.11 4.102L0 16.157l7.902 7.901 4.11-4.103L16.11 24.06l7.902-7.902-4.11-4.102 4.11-4.104L16.11.062zM12 10.15l1.838 1.838L12 13.828l-1.838-1.84 1.838-1.838zM8.828 7.014l3.172 3.172 3.172-3.172L16.986 8.84l-3.172 3.172 3.172 3.172-1.814 1.814-3.172-3.172-3.172 3.172-1.814-1.814 3.172-3.172-3.172-3.172L8.828 7.014z" />
-      </svg>
-    ),
-    SOL: (
-      <svg
-        role="img"
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-8 w-8 text-purple-400"
-        fill="currentColor"
-      >
-        <title>Solana</title>
-        <path d="M3.38.118a.33.33 0 0 0-.323.09.339.339 0 0 0-.146.294v7.35a.338.338 0 0 0 .146.293.33.33 0 0 0 .323.091l17.21-4.662a.338.338 0 0 0 .227-.294.338.338 0 0 0-.227-.293L3.38.118zm0 8.247a.33.33 0 0 0-.323.09.339.339 0 0 0-.146.294v7.35c0 .13.055.25.146.293a.33.33 0 0 0 .323.091l17.21-4.662a.338.338 0 0 0 .227-.294.338.338 0 0 0-.227-.293L3.38 8.365zm0 8.248a.33.33 0 0 0-.323.09.339.339 0 0 0-.146.294v7.35c0 .13.055.25.146.293a.33.33 0 0 0 .323.091l17.21-4.662a.338.338 0 0 0 .227-.294.338.338 0 0 0-.227-.293L3.38 16.613z" />
-      </svg>
-    ),
-    Multicoin: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-8 w-8 text-blue-300"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={2}
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-        />
-      </svg>
-    ),
-  };
-  return icons[coin] || null;
-};
-
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard },
   { label: 'Search', icon: Search },
@@ -202,12 +132,9 @@ export default function DashboardPage() {
               {coins.map(coin => (
                 <div
                   key={coin}
-                  className="bg-black/20 backdrop-blur-md border border-blue-500/30 rounded-2xl p-4 flex flex-col items-center justify-center gap-3 text-center transition-all duration-300 hover:bg-blue-500/20 hover:border-blue-400/50 cursor-pointer shadow-lg hover:shadow-blue-500/20"
+                  className="bg-black/20 backdrop-blur-md border border-blue-500/30 rounded-2xl p-4 flex flex-col items-center justify-center gap-3 text-center transition-all duration-300 hover:bg-blue-500/20 hover:border-blue-400/50 cursor-pointer shadow-lg hover:shadow-blue-500/20 h-28"
                 >
-                  <div className="w-16 h-16 rounded-full bg-black/30 flex items-center justify-center shadow-inner-lg">
-                    <CryptoIcon coin={coin} />
-                  </div>
-                  <span className="font-bold tracking-wider">{coin}</span>
+                  <span className="font-bold tracking-wider text-lg">{coin}</span>
                 </div>
               ))}
             </div>
@@ -280,5 +207,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
