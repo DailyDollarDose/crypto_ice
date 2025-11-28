@@ -2,14 +2,16 @@
 
 import { useState } from 'react';
 import { useFirestore } from '@/firebase';
-import { writeBatch, doc, collection } from 'firebase/firestore';
+import { doc, collection, setDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import keysData from '@/../docs/generated-keys.json';
+import { Progress } from '@/components/ui/progress';
 
 export default function SeedPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isDone, setIsDone] = useState(false);
+  const [progress, setProgress] = useState(0);
   const firestore = useFirestore();
   const { toast } = useToast();
 
@@ -23,17 +25,17 @@ export default function SeedPage() {
       return;
     }
     setIsLoading(true);
+    setProgress(0);
+
+    const keysToAdd = keysData.keys.slice(0, 500);
+    const totalKeys = keysToAdd.length;
 
     try {
-      // Firestore allows a maximum of 500 operations in a single batch.
-      // If you have more keys, you'll need to split them into multiple batches.
-      const batch = writeBatch(firestore);
       const accessKeysRef = collection(firestore, 'accessKeys');
-      const keysToAdd = keysData.keys.slice(0, 500); 
-
-      keysToAdd.forEach((key) => {
-        const newKeyRef = doc(accessKeysRef); // Auto-generates a unique ID
-        batch.set(newKeyRef, {
+      for (let i = 0; i < totalKeys; i++) {
+        const key = keysToAdd[i];
+        const newKeyRef = doc(accessKeysRef);
+        await setDoc(newKeyRef, {
           key: key,
           isValid: true,
           purchaseDate: new Date().toISOString(),
@@ -41,9 +43,8 @@ export default function SeedPage() {
           rewardLimit: 0,
           totalReward: 0,
         });
-      });
-
-      await batch.commit();
+        setProgress(((i + 1) / totalKeys) * 100);
+      }
 
       toast({
         title: 'Success!',
@@ -65,7 +66,7 @@ export default function SeedPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
-      <div className="max-w-md text-center p-8">
+      <div className="max-w-md text-center p-8 w-full">
         <h1 className="text-2xl font-bold mb-4">Seed Firestore Database</h1>
         <p className="text-muted-foreground mb-6">
           Click the button below to add the 500 generated access keys from{' '}
@@ -78,6 +79,12 @@ export default function SeedPage() {
         >
           {isLoading ? 'Seeding...' : isDone ? 'Done!' : 'Seed Database'}
         </Button>
+        {isLoading && (
+            <div className="mt-4">
+                <Progress value={progress} className="w-full" />
+                <p className="text-sm text-muted-foreground mt-2">{Math.round(progress)}%</p>
+            </div>
+        )}
         {isDone && (
             <p className="mt-4 text-green-500">
                 Database has been seeded successfully. You can now remove the <code>src/app/admin/seed</code> directory.
