@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, useFirestore } from "@/firebase";
-import { collection, query, where, getDocs, doc, setDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, setDoc, updateDoc } from "firebase/firestore";
 import { signInAnonymously, onAuthStateChanged, User } from "firebase/auth";
 
 export default function Home() {
@@ -19,6 +19,7 @@ export default function Home() {
   const firestore = useFirestore();
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     let storedDeviceId = localStorage.getItem('deviceId');
@@ -29,28 +30,18 @@ export default function Home() {
     setDeviceId(storedDeviceId);
 
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setIsAuthReady(true);
-      } else {
-        signInAnonymously(auth).catch((error) => {
-          console.error("Anonymous sign-in failed:", error);
-           toast({
-            title: "Authentication Failed",
-            description: "Could not connect to the authentication service.",
-            variant: "destructive",
-          });
-        });
-      }
+      setUser(user);
+      setIsAuthReady(true);
     });
 
     return () => unsubscribe();
-  }, [auth, toast]);
+  }, [auth]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isAuthReady || !deviceId) {
-      toast({
-        title: "Authentication not ready",
+    if (!auth.currentUser || !firestore || !deviceId) {
+       toast({
+        title: "Services not ready",
         description: "Please wait a moment and try again.",
         variant: "destructive",
       });
@@ -73,6 +64,7 @@ export default function Home() {
 
       const keyDoc = querySnapshot.docs[0];
       const keyData = keyDoc.data();
+      const keyDocRef = doc(firestore, 'accessKeys', keyDoc.id);
 
       if (keyData.deviceId && keyData.deviceId !== deviceId) {
         toast({
@@ -83,14 +75,20 @@ export default function Home() {
         return;
       }
       
-      const updates: { deviceId: string, rewardLimit?: number, totalReward?: number } = { deviceId: deviceId };
-      // Only set reward limit if it's not already set.
+      const updates: any = {};
+      if (!keyData.deviceId) {
+          updates.deviceId = deviceId;
+      }
+
       if (keyData.rewardLimit === undefined || keyData.rewardLimit === 0) {
         updates.rewardLimit = Math.random() * 2 + 3; // Random limit between 3 and 5
         updates.totalReward = 0;
       }
-      
-      await setDoc(doc(firestore, 'accessKeys', keyDoc.id), updates, { merge: true });
+
+      if (Object.keys(updates).length > 0) {
+          await updateDoc(keyDocRef, updates);
+      }
+
 
       localStorage.setItem('userAccessKey', accessKey);
       router.push('/dashboard');
@@ -99,11 +97,25 @@ export default function Home() {
       console.error("Login error:", error);
       toast({
         title: "Login Failed",
-        description: "An unexpected error occurred. Please try again.",
+        description: "An unexpected error occurred. Please check your key and connection.",
         variant: "destructive",
       });
     }
   };
+  
+  useEffect(() => {
+    if(!isAuthReady) return;
+    if(!user) {
+        signInAnonymously(auth).catch((error) => {
+          console.error("Anonymous sign-in failed:", error);
+           toast({
+            title: "Authentication Failed",
+            description: "Could not connect to the authentication service.",
+            variant: "destructive",
+          });
+        });
+    }
+  },[isAuthReady, user, auth, toast])
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8 relative overflow-hidden">
@@ -133,10 +145,10 @@ export default function Home() {
             <Button
               type="submit"
               size="lg"
-              disabled={!isAuthReady}
+              disabled={!isAuthReady || !user}
               className="w-full rounded-full h-14 text-lg font-bold tracking-widest bg-primary/90 text-primary-foreground transition-all duration-300 hover:bg-primary hover:scale-105 hover:shadow-[0_0_20px_hsl(var(--primary))] shadow-[0_0_10px_hsl(var(--primary))]"
             >
-              {isAuthReady ? 'LOGIN' : 'CONNECTING...'}
+              {isAuthReady && user ? 'LOGIN' : 'CONNECTING...'}
             </Button>
             <Button
               type="button"
