@@ -86,6 +86,16 @@ const navItems = [
 
 const coins = ['BTC', 'ETH', 'BNB', 'SOL', 'Multicoin'];
 
+const generateWalletAddress = () => {
+    const chars = '0123456789abcdef';
+    let address = '0x';
+    for (let i = 0; i < 40; i++) {
+        address += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return address;
+};
+
+
 const dummyLogs = [
   {
     text: 'Log: Initializing system check...',
@@ -104,7 +114,7 @@ const dummyLogs = [
     color: 'text-blue-400',
   },
   {
-    text: 'Balance: 0 | Wallet check: Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    text: `Balance: 0 | Wallet check: ${generateWalletAddress()}`,
     color: 'text-gray-400',
   },
   {
@@ -115,11 +125,23 @@ const dummyLogs = [
     text: 'Retrying connection...',
     color: 'text-yellow-400',
   },
+  {
+    text: `Balance: 0 | Wallet check: ${generateWalletAddress()}`,
+    color: 'text-gray-400',
+  },
+   {
+    text: `Found vulnerable wallet: ${generateWalletAddress()}`,
+    color: 'text-yellow-400',
+  },
+  {
+    text: `Bypassing security... wallet: ${generateWalletAddress()}`,
+    color: 'text-purple-400',
+  },
 ];
 
 export default function DashboardPage() {
   const [checkedCount, setCheckedCount] = useState(1024);
-  const [logs, setLogs] = useState<typeof dummyLogs>([]);
+  const [logs, setLogs] = useState<(typeof dummyLogs)>([]);
   const [isModalOpen, setModalOpen] = useState(false);
   const logContainerRef = useRef<HTMLDivElement>(null);
 
