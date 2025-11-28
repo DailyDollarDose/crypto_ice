@@ -1,4 +1,3 @@
-
 'use client';
 
 import ParticleAnimation from "@/components/particle-animation";
@@ -6,26 +5,90 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { accessKeys } from "@/lib/access-keys";
+import { useAuth, useFirestore } from "@/firebase";
+import { collection, query, where, getDocs, doc, setDoc, getDoc } from "firebase/firestore";
+import { signInAnonymously, onAuthStateChanged } from "firebase/auth";
 
 export default function Home() {
   const router = useRouter();
   const [accessKey, setAccessKey] = useState('');
   const { toast } = useToast();
+  const auth = useAuth();
+  const firestore = useFirestore();
+  const [deviceId, setDeviceId] = useState<string | null>(null);
 
-  const handleLogin = (e: React.FormEvent) => {
+  useEffect(() => {
+    let storedDeviceId = localStorage.getItem('deviceId');
+    if (!storedDeviceId) {
+      storedDeviceId = crypto.randomUUID();
+      localStorage.setItem('deviceId', storedDeviceId);
+    }
+    setDeviceId(storedDeviceId);
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        signInAnonymously(auth).catch((error) => {
+          console.error("Anonymous sign-in failed:", error);
+        });
+      }
+    });
+
+    return () => unsubscribe();
+  }, [auth]);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (accessKeys.includes(accessKey)) {
+    if (!auth.currentUser || !deviceId) {
+      toast({
+        title: "Authentication not ready",
+        description: "Please wait a moment and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const accessKeysRef = collection(firestore, 'accessKeys');
+      const q = query(accessKeysRef, where("key", "==", accessKey));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        toast({
+          title: "Access Denied",
+          description: "Invalid access key.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const keyDoc = querySnapshot.docs[0];
+      const keyData = keyDoc.data();
+
+      if (keyData.deviceId && keyData.deviceId !== deviceId) {
+        toast({
+          title: "Access Denied",
+          description: "This key is already registered to another device.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!keyData.deviceId) {
+        await setDoc(doc(firestore, 'accessKeys', keyDoc.id), { deviceId: deviceId }, { merge: true });
+      }
+
       localStorage.setItem('userAccessKey', accessKey);
       router.push('/dashboard');
-    } else {
+
+    } catch (error) {
+      console.error("Login error:", error);
       toast({
-        title: "Access Denied",
-        description: "Please enter a valid access key.",
+        title: "Login Failed",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
-      })
+      });
     }
   };
 
