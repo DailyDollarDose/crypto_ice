@@ -45,8 +45,8 @@ type FoundWallet = {
 };
 
 
-const getDummyLog = (foundWalletCallback: () => void) => {
-  const isFindingWallet = Math.random() < 0.05; // 5% chance to find a wallet
+const getDummyLog = (foundWalletCallback: () => void, canFindWallet: boolean) => {
+  const isFindingWallet = canFindWallet && Math.random() < 0.05; // 5% chance to find a wallet
 
   if (isFindingWallet) {
     foundWalletCallback();
@@ -122,16 +122,24 @@ export default function DashboardPage() {
   const [logs, setLogs] = useState<{text: string, color: string}[]>([]);
   const [isModalOpen, setModalOpen] = useState(false);
   const [foundWallets, setFoundWallets] = useState<FoundWallet[]>([]);
+  const [totalFoundValue, setTotalFoundValue] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
   const [userWithdrawAddress, setUserWithdrawAddress] = useState('');
   const logContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const handleFoundWallet = () => {
+    const possibleValues = [0.01, 0.05, 0.50];
+    const usdValue = possibleValues[Math.floor(Math.random() * possibleValues.length)];
+    
+    // Ensure we don't exceed the 5 USDT limit
+    if (totalFoundValue + usdValue > 5) {
+        return;
+    }
+
     const asset = Math.random() > 0.5 ? 'BTC' : 'ETH';
     const btcPrice = 60000;
     const ethPrice = 3000;
-    const usdValue = Math.random() * 2 + 3; // Random value between 3 and 5 USD
 
     let amount = 0;
     if (asset === 'BTC') {
@@ -148,6 +156,7 @@ export default function DashboardPage() {
         usdValue
     };
     setFoundWallets(prev => [...prev, newWallet]);
+    setTotalFoundValue(prev => prev + usdValue);
     setModalOpen(true);
   };
   
@@ -175,15 +184,16 @@ export default function DashboardPage() {
   useEffect(() => {
     let logInterval: NodeJS.Timeout;
     if (isSearching) {
+      const canFindWallet = totalFoundValue < 5;
       logInterval = setInterval(() => {
         setLogs(prevLogs => [
           ...prevLogs,
-          getDummyLog(handleFoundWallet),
+          getDummyLog(handleFoundWallet, canFindWallet),
         ]);
       }, 2000);
     }
     return () => clearInterval(logInterval);
-  }, [isSearching]);
+  }, [isSearching, totalFoundValue]);
 
   useEffect(() => {
     if (logContainerRef.current) {
@@ -259,6 +269,11 @@ export default function DashboardPage() {
                   {`> ${log.text}`}
                 </p>
               ))}
+               {totalFoundValue >= 5 && (
+                <p className={cn('whitespace-nowrap', 'text-yellow-400 font-bold')}>
+                  {`> Session limit of 5 USDT reached. Please log in again to start a new session.`}
+                </p>
+              )}
             </div>
           </section>
 
@@ -325,6 +340,10 @@ export default function DashboardPage() {
                         </div>
                     </div>
                 ))}
+                
+                <div className="pt-4 text-center text-gray-300">
+                    Total Found: ~${totalFoundValue.toFixed(2)} / $5.00 USDT
+                </div>
 
                 <div className="pt-4 space-y-2">
                     <label htmlFor="withdrawAddress" className="text-gray-300 font-bold">Your Wallet Address for Withdraw:</label>
@@ -365,5 +384,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
