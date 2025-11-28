@@ -140,7 +140,7 @@ const dummyLogs = [
 ];
 
 export default function DashboardPage() {
-  const [checkedCount, setCheckedCount] = useState(1024);
+  const [checkedCount, setCheckedCount] = useState(0);
   const [logs, setLogs] = useState<(typeof dummyLogs)>([]);
   const [isModalOpen, setModalOpen] = useState(false);
   const logContainerRef = useRef<HTMLDivElement>(null);
