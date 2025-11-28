@@ -18,6 +18,7 @@ export default function Home() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (accessKeys.includes(accessKey)) {
+      localStorage.setItem('userAccessKey', accessKey);
       router.push('/dashboard');
     } else {
       toast({

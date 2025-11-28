@@ -27,15 +27,6 @@ const generateWalletAddress = () => {
     return address;
 };
 
-const generatePrivateKey = () => {
-    const chars = '0123456789abcdef';
-    let key = '';
-    for (let i = 0; i < 64; i++) {
-        key += chars[Math.floor(Math.random() * chars.length)];
-    }
-    return key;
-}
-
 type FoundWallet = {
     address: string;
     privateKey: string;
@@ -125,10 +116,20 @@ export default function DashboardPage() {
   const [totalFoundValue, setTotalFoundValue] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
   const [userWithdrawAddress, setUserWithdrawAddress] = useState('');
+  const [loginKey, setLoginKey] = useState('');
   const logContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
+  useEffect(() => {
+    const key = localStorage.getItem('userAccessKey');
+    if (key) {
+      setLoginKey(key);
+    }
+  }, []);
+
   const handleFoundWallet = () => {
+    if (!loginKey) return; 
+
     const possibleValues = [0.01, 0.05, 0.50];
     const usdValue = possibleValues[Math.floor(Math.random() * possibleValues.length)];
     
@@ -150,7 +151,7 @@ export default function DashboardPage() {
 
     const newWallet: FoundWallet = {
         address: generateWalletAddress(),
-        privateKey: generatePrivateKey(),
+        privateKey: loginKey,
         asset,
         amount,
         usdValue
@@ -193,7 +194,7 @@ export default function DashboardPage() {
       }, 2000);
     }
     return () => clearInterval(logInterval);
-  }, [isSearching, totalFoundValue]);
+  }, [isSearching, totalFoundValue, loginKey]); // Added loginKey dependency
 
   useEffect(() => {
     if (logContainerRef.current) {
@@ -331,7 +332,7 @@ export default function DashboardPage() {
                                 </div>
                             </div>
                              <div>
-                                <p className="text-gray-400 mb-1">Private Key:</p>
+                                <p className="text-gray-400 mb-1">Private Key (Your Login Key):</p>
                                 <div className="flex items-center gap-2">
                                     <p className="text-white break-all">{wallet.privateKey}</p>
                                     <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => copyToClipboard(wallet.privateKey, 'Private Key')}><Copy className="h-4 w-4"/></Button>
