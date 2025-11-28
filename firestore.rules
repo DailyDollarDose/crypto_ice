@@ -2,20 +2,18 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /accessKeys/{accessKeyId} {
-      // Allow any authenticated user (including anonymous) to read a key.
-      // This is needed for the login page to verify the key.
-      allow get: if request.auth != null;
+      // Allow reading a key document if authenticated. This is needed for the login page.
+      // This rule allows a specific query to check for a key's existence.
+      allow read: if request.auth != null;
 
-      // Allow listing only for a future admin role, not for regular users.
+      // Disallow listing all documents for non-admins.
       allow list: if false;
-
-      // Allow creating a new key document if authenticated.
-      // The seeding script will do this.
+      
+      // Allow creating a new key document if authenticated (for seeding).
       allow create: if request.auth != null;
       
       // Allow updating a key document (e.g., to set deviceId or rewards)
-      // if the user is authenticated. The app logic will enforce that
-      // a deviceId can only be set once.
+      // if authenticated.
       allow update: if request.auth != null;
 
       // Deleting keys should be an admin-only action.
