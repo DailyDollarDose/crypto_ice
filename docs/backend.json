@@ -27,6 +27,14 @@
         "deviceId": {
             "type": "string",
             "description": "The unique identifier of the device the key is registered to."
+        },
+        "rewardLimit": {
+          "type": "number",
+          "description": "The maximum reward value in USDT that can be found with this key."
+        },
+        "totalReward": {
+          "type": "number",
+          "description": "The total accumulated reward value in USDT found with this key."
         }
       },
       "required": [
@@ -51,7 +59,7 @@
           "schema": {
             "$ref": "#/backend/entities/AccessKey"
           },
-          "description": "Collection for storing access keys. The 'accessKeyId' is the document ID. Includes fields such as 'key', 'isValid', 'purchaseDate', and 'deviceId'.",
+          "description": "Collection for storing access keys. The 'accessKeyId' is the document ID. Includes fields such as 'key', 'isValid', 'purchaseDate', 'deviceId', 'rewardLimit', and 'totalReward'.",
           "params": [
             {
               "name": "accessKeyId",
@@ -61,6 +69,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to securely store and manage access keys for the Crypto Ice Access application. The key principle is Authorization Independence, achieved by avoiding `get()` calls in security rules. Since access keys are essentially global and not user-specific, they are stored in a top-level collection. This design supports QAPs, as listing all access keys would typically be an admin function and thus, secured by checking admin role existence in `/roles_admin/{uid}` (not explicitly modeled here but a standard practice).\n\nThe access keys themselves have a simple schema with `id`, `key`, `isValid`, and `purchaseDate`. The `isValid` flag is crucial for quickly disabling access without modifying the key itself. While the application uses anonymous login, which inherently has no user ID, this design assumes a more robust authentication mechanism might be added in the future for administrative purposes. The 'deviceId' field has been added to lock an access key to a specific device."
+    "reasoning": "The Firestore structure is designed to securely store and manage access keys for the Crypto Ice Access application. The key principle is Authorization Independence, achieved by avoiding `get()` calls in security rules. Since access keys are essentially global and not user-specific, they are stored in a top-level collection. This design supports QAPs, as listing all access keys would typically be an admin function and thus, secured by checking admin role existence in `/roles_admin/{uid}` (not explicitly modeled here but a standard practice).\n\nThe access keys themselves have a schema with `id`, `key`, `isValid`, `purchaseDate`, and `deviceId`. The `isValid` flag is crucial for quickly disabling access without modifying the key itself. While the application uses anonymous login, which inherently has no user ID, this design assumes a more robust authentication mechanism might be added in the future for administrative purposes. The 'deviceId' field has been added to lock an access key to a specific device. The 'rewardLimit' and 'totalReward' fields are used to manage the reward system per key."
   }
 }

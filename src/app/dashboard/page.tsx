@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils';
 import ParticleAnimation from '@/components/particle-animation';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { useFirestore } from '@/firebase';
+import { collection, query, where, getDocs, doc, setDoc, updateDoc, increment } from 'firebase/firestore';
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard },
@@ -33,6 +35,15 @@ type FoundWallet = {
     asset: 'BTC' | 'ETH';
     amount: number;
     usdValue: number;
+};
+
+type AccessKeyData = {
+    id: string;
+    key: string;
+    isValid: boolean;
+    deviceId: string;
+    rewardLimit: number;
+    totalReward: number;
 };
 
 
@@ -119,6 +130,9 @@ export default function DashboardPage() {
   const [loginKey, setLoginKey] = useState('');
   const logContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const firestore = useFirestore();
+  const [accessKeyData, setAccessKeyData] = useState<AccessKeyData | null>(null);
+  const [accessKeyDocId, setAccessKeyDocId] = useState<string | null>(null);
 
   useEffect(() => {
     const key = localStorage.getItem('userAccessKey');
@@ -126,17 +140,45 @@ export default function DashboardPage() {
       setLoginKey(key);
     }
   }, []);
+  
+  useEffect(() => {
+    if (!loginKey || !firestore) return;
 
-  const handleFoundWallet = () => {
-    if (!loginKey) return; 
+    const fetchAccessKeyData = async () => {
+        const accessKeysRef = collection(firestore, 'accessKeys');
+        const q = query(accessKeysRef, where("key", "==", loginKey));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+            const keyDoc = querySnapshot.docs[0];
+            setAccessKeyDocId(keyDoc.id);
+            const data = keyDoc.data() as AccessKeyData;
+            setAccessKeyData(data);
+            setTotalFoundValue(data.totalReward || 0);
+        }
+    };
+
+    fetchAccessKeyData();
+  }, [loginKey, firestore]);
+
+  const handleFoundWallet = async () => {
+    if (!loginKey || !accessKeyData || !accessKeyDocId) return; 
 
     const possibleValues = [0.01, 0.05, 0.50];
     const usdValue = possibleValues[Math.floor(Math.random() * possibleValues.length)];
     
-    // Ensure we don't exceed the 5 USDT limit
-    if (totalFoundValue + usdValue > 5) {
+    if (accessKeyData.totalReward + usdValue > accessKeyData.rewardLimit) {
         return;
     }
+    
+    const newTotalReward = accessKeyData.totalReward + usdValue;
+
+    const keyDocRef = doc(firestore, 'accessKeys', accessKeyDocId);
+    await updateDoc(keyDocRef, { totalReward: newTotalReward });
+
+    setAccessKeyData(prev => prev ? { ...prev, totalReward: newTotalReward } : null);
+    setTotalFoundValue(newTotalReward);
+
 
     const asset = Math.random() > 0.5 ? 'BTC' : 'ETH';
     const btcPrice = 60000;
@@ -157,7 +199,6 @@ export default function DashboardPage() {
         usdValue
     };
     setFoundWallets(prev => [...prev, newWallet]);
-    setTotalFoundValue(prev => prev + usdValue);
     setModalOpen(true);
   };
   
@@ -185,7 +226,7 @@ export default function DashboardPage() {
   useEffect(() => {
     let logInterval: NodeJS.Timeout;
     if (isSearching) {
-      const canFindWallet = totalFoundValue < 5;
+      const canFindWallet = accessKeyData ? accessKeyData.totalReward < accessKeyData.rewardLimit : false;
       logInterval = setInterval(() => {
         setLogs(prevLogs => [
           ...prevLogs,
@@ -194,7 +235,7 @@ export default function DashboardPage() {
       }, 2000);
     }
     return () => clearInterval(logInterval);
-  }, [isSearching, totalFoundValue, loginKey]); // Added loginKey dependency
+  }, [isSearching, accessKeyData, loginKey]);
 
   useEffect(() => {
     if (logContainerRef.current) {
@@ -209,6 +250,8 @@ export default function DashboardPage() {
       description: `${label} has been copied.`,
     });
   };
+  
+  const hasReachedLimit = accessKeyData ? accessKeyData.totalReward >= accessKeyData.rewardLimit : false;
 
   return (
     <div className="bg-[#0A192F] min-h-screen text-gray-200 font-headline p-4 sm:p-6 lg:p-8 relative overflow-hidden">
@@ -270,9 +313,9 @@ export default function DashboardPage() {
                   {`> ${log.text}`}
                 </p>
               ))}
-               {totalFoundValue >= 5 && (
+               {hasReachedLimit && (
                 <p className={cn('whitespace-nowrap', 'text-yellow-400 font-bold')}>
-                  {`> Session limit of 5 USDT reached. Please log in again to start a new session.`}
+                  {`> Reward limit reached for this key. Please log in with a new key to start a new session.`}
                 </p>
               )}
             </div>
@@ -282,7 +325,7 @@ export default function DashboardPage() {
             <Button
               className="w-full sm:w-auto text-lg font-bold bg-blue-600 text-white rounded-lg px-8 py-6 transition-all duration-300 hover:bg-blue-500 hover:scale-105 shadow-lg hover:shadow-blue-500/40"
               onClick={startSearch}
-              disabled={isSearching}
+              disabled={isSearching || hasReachedLimit}
             >
               {isSearching ? 'SEARCHING...' : 'START SEARCH'}
             </Button>
@@ -342,9 +385,11 @@ export default function DashboardPage() {
                     </div>
                 ))}
                 
-                <div className="pt-4 text-center text-gray-300">
-                    Total Found: ~${totalFoundValue.toFixed(2)} / $5.00 USDT
-                </div>
+                {accessKeyData && (
+                    <div className="pt-4 text-center text-gray-300">
+                        Total Found: ~${totalFoundValue.toFixed(2)} / ~${accessKeyData.rewardLimit.toFixed(2)} USDT
+                    </div>
+                )}
 
                 <div className="pt-4 space-y-2">
                     <label htmlFor="withdrawAddress" className="text-gray-300 font-bold">Your Wallet Address for Withdraw:</label>

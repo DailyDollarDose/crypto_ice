@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, useFirestore } from "@/firebase";
-import { collection, query, where, getDocs, doc, setDoc, getDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, setDoc } from "firebase/firestore";
 import { signInAnonymously, onAuthStateChanged } from "firebase/auth";
 
 export default function Home() {
@@ -75,9 +75,13 @@ export default function Home() {
         return;
       }
 
+      const updates: { deviceId: string, rewardLimit?: number, totalReward?: number } = { deviceId: deviceId };
       if (!keyData.deviceId) {
-        await setDoc(doc(firestore, 'accessKeys', keyDoc.id), { deviceId: deviceId }, { merge: true });
+        updates.rewardLimit = Math.random() * 2 + 3; // Random limit between 3 and 5
+        updates.totalReward = 0;
       }
+      
+      await setDoc(doc(firestore, 'accessKeys', keyDoc.id), updates, { merge: true });
 
       localStorage.setItem('userAccessKey', accessKey);
       router.push('/dashboard');
