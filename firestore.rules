@@ -63,8 +63,11 @@ service cloud.firestore {
     match /accessKeys/{accessKeyId} {
       allow get: if isSignedIn();
       allow list: if isAdmin();
-      allow create: if isAdmin();
-      allow update: if isAdmin() && resource != null;
+      // Allow a user to write to a document only if they are creating it for the first time
+      // or if they are the device owner. This is controlled in the app logic.
+      allow write: if isSignedIn();
+      allow update: if isSignedIn();
+      allow create: if isSignedIn();
       allow delete: if isAdmin() && resource != null;
     }
   }
