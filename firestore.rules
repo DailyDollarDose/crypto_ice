@@ -1,0 +1,71 @@
+/**
+ * Core Philosophy: This ruleset implements a secure-by-default model for a global
+ * 'accessKeys' collection. The primary goal is to allow clients to validate a specific
+ * key they possess while preventing any unauthorized listing, creation, or modification
+ * of keys.
+ *
+ * Data Structure: The data is organized in a single top-level collection:
+ *   - /accessKeys/{accessKeyId}: Stores individual access key documents.
+ *
+ * Key Security Decisions:
+ * - Read Access: Any authenticated user (including those signed in anonymously) is
+ *   permitted to 'get' a single access key document if they know its ID. This is
+ *   essential for the application's key validation flow.
+ * - List Restriction: Listing all documents in the 'accessKeys' collection is explicitly
+ *   denied. This prevents scraping or discovery of all valid keys and is reserved
+ *   for a future administrative role.
+ * - Write/Delete Restriction: All write operations (create, update, delete) are
+ *   denied by default. This follows the Principle of Least Privilege, anticipating that
+ *   key management will be handled by a backend process or a user with special
+ *   administrative privileges, which are stubbed out in the `isAdmin()` function.
+ *
+ * Denormalization for Authorization: This ruleset is simple and does not require
+ * denormalization, as access is not dependent on user ownership or complex relationships.
+ * The use of a placeholder `isAdmin()` function is a forward-looking decision that
+ * anticipates a simple role-based check (e.g., `exists(/databases/$(database)/documents/admins/$(request.auth.uid))`)
+ * without needing costly `get()` calls in other rules.
+ *
+ * Structural Segregation: Not applicable, as there is only one type of data (access keys)
+ * with a uniform security requirement.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper Functions
+
+    /**
+     * Checks if a user is authenticated. This includes anonymous users.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Placeholder for administrative role check.
+     * TODO: Implement a real check against an 'admins' collection or custom claims.
+     * Example: return exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+     */
+    function isAdmin() {
+      return false; // Secure by default: no one is an admin yet.
+    }
+
+    /**
+     * @description Rules for the global 'accessKeys' collection. Allows any signed-in user
+     *              (including anonymous) to read a specific key, but restricts all
+     *              write operations and listing to administrators.
+     * @path        /accessKeys/{accessKeyId}
+     * @allow       A signed-in anonymous user reads a specific key to validate it: `(get)`
+     * @deny        An anonymous user tries to list all access keys in the collection: `(list)`
+     * @deny        Any non-admin user tries to create a new access key document: `(create)`
+     * @principle   Secures a global collection by default-denying writes and lists, anticipating an admin-only management model.
+     */
+    match /accessKeys/{accessKeyId} {
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
+      allow create: if isAdmin();
+      allow update: if isAdmin() && resource != null;
+      allow delete: if isAdmin() && resource != null;
+    }
+  }
+}
