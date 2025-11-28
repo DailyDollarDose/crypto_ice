@@ -110,7 +110,7 @@ const dummyLogs = [
     color: 'text-green-400',
   },
   {
-    text: 'Log: Running check on sample wallet...',
+    text: 'Log: Running check on wallet...',
     color: 'text-blue-400',
   },
   {
