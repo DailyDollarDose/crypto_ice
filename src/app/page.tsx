@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { accessKeys } from "@/lib/access-keys";
 
 export default function Home() {
   const router = useRouter();
@@ -16,8 +17,7 @@ export default function Home() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (accessKey) {
-      // In a real app, you'd validate the key. Here we just navigate.
+    if (accessKeys.includes(accessKey)) {
       router.push('/dashboard');
     } else {
       toast({
