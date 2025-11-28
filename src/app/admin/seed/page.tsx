@@ -32,7 +32,7 @@ export default function SeedPage() {
       const keysToAdd = keysData.keys.slice(0, 500); 
 
       keysToAdd.forEach((key) => {
-        const newKeyRef = doc(accessKeysRef);
+        const newKeyRef = doc(accessKeysRef); // Auto-generates a unique ID
         batch.set(newKeyRef, {
           key: key,
           isValid: true,
