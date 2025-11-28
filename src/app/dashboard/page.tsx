@@ -26,68 +26,71 @@ const generateWalletAddress = () => {
 };
 
 
-const dummyLogs = [
-  {
-    text: 'Log: Initializing system check...',
-    color: 'text-blue-400',
-  },
-  {
-    text: 'Connecting to wallet node: eu-central-1...',
-    color: 'text-gray-400',
-  },
-  {
-    text: 'Success: Connection established.',
-    color: 'text-green-400',
-  },
-  {
-    text: 'Log: Running check on wallet...',
-    color: 'text-blue-400',
-  },
-  {
-    text: `Balance: 0 | Wallet check: ${generateWalletAddress()}`,
-    color: 'text-gray-400',
-  },
-  {
-    text: 'Patience is key. The biggest rewards take time.',
-    color: 'text-cyan-400',
-  },
-  {
-    text: 'Error: Timeout while fetching transaction history.',
-    color: 'text-red-400',
-  },
-  {
-    text: 'Retrying connection...',
-    color: 'text-yellow-400',
-  },
-  {
-    text: `Balance: 0 | Wallet check: ${generateWalletAddress()}`,
-    color: 'text-gray-400',
-  },
-  {
-    text: 'Stay focused. Every check brings you closer.',
-    color: 'text-cyan-400',
-  },
-   {
-    text: `Found vulnerable wallet: ${generateWalletAddress()}`,
-    color: 'text-yellow-400',
-  },
-  {
-    text: `Bypassing security... wallet: ${generateWalletAddress()}`,
-    color: 'text-purple-400',
-  },
-  {
-    text: 'The search for treasure requires persistence. Keep going.',
-    color: 'text-cyan-400',
-  },
-  {
-    text: 'Success is not final, failure is not fatal: it is the courage to continue that counts.',
-    color: 'text-green-400',
-  },
-];
+const getDummyLog = () => {
+  const dummyLogOptions = [
+    {
+      text: 'Log: Initializing system check...',
+      color: 'text-blue-400',
+    },
+    {
+      text: 'Connecting to wallet node: eu-central-1...',
+      color: 'text-gray-400',
+    },
+    {
+      text: 'Success: Connection established.',
+      color: 'text-green-400',
+    },
+    {
+      text: 'Log: Running check on wallet...',
+      color: 'text-blue-400',
+    },
+    {
+      text: `Balance: 0 | Wallet check: ${generateWalletAddress()}`,
+      color: 'text-gray-400',
+    },
+    {
+      text: 'Patience is key. The biggest rewards take time.',
+      color: 'text-cyan-400',
+    },
+    {
+      text: 'Error: Timeout while fetching transaction history.',
+      color: 'text-red-400',
+    },
+    {
+      text: 'Retrying connection...',
+      color: 'text-yellow-400',
+    },
+    {
+      text: `Balance: 0 | Wallet check: ${generateWalletAddress()}`,
+      color: 'text-gray-400',
+    },
+    {
+      text: 'Stay focused. Every check brings you closer.',
+      color: 'text-cyan-400',
+    },
+     {
+      text: `Found vulnerable wallet: ${generateWalletAddress()}`,
+      color: 'text-yellow-400',
+    },
+    {
+      text: `Bypassing security... wallet: ${generateWalletAddress()}`,
+      color: 'text-purple-400',
+    },
+    {
+      text: 'The search for treasure requires persistence. Keep going.',
+      color: 'text-cyan-400',
+    },
+    {
+      text: 'Success is not final, failure is not fatal: it is the courage to continue that counts.',
+      color: 'text-green-400',
+    },
+  ];
+  return dummyLogOptions[Math.floor(Math.random() * dummyLogOptions.length)];
+}
 
 export default function DashboardPage() {
   const [checkedCount, setCheckedCount] = useState(0);
-  const [logs, setLogs] = useState<(typeof dummyLogs)>([]);
+  const [logs, setLogs] = useState<{text: string, color: string}[]>([]);
   const [isModalOpen, setModalOpen] = useState(false);
   const logContainerRef = useRef<HTMLDivElement>(null);
 
@@ -102,7 +105,7 @@ export default function DashboardPage() {
     const logInterval = setInterval(() => {
       setLogs(prevLogs => [
         ...prevLogs,
-        dummyLogs[Math.floor(Math.random() * dummyLogs.length)],
+        getDummyLog(),
       ]);
     }, 2000);
     return () => clearInterval(logInterval);
