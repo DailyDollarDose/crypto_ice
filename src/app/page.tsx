@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, useFirestore } from "@/firebase";
 import { collection, query, where, getDocs, doc, setDoc } from "firebase/firestore";
-import { signInAnonymously, onAuthStateChanged } from "firebase/auth";
+import { signInAnonymously, onAuthStateChanged, User } from "firebase/auth";
 
 export default function Home() {
   const router = useRouter();
@@ -18,6 +18,7 @@ export default function Home() {
   const auth = useAuth();
   const firestore = useFirestore();
   const [deviceId, setDeviceId] = useState<string | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
 
   useEffect(() => {
     let storedDeviceId = localStorage.getItem('deviceId');
@@ -28,19 +29,26 @@ export default function Home() {
     setDeviceId(storedDeviceId);
 
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) {
+      if (user) {
+        setIsAuthReady(true);
+      } else {
         signInAnonymously(auth).catch((error) => {
           console.error("Anonymous sign-in failed:", error);
+           toast({
+            title: "Authentication Failed",
+            description: "Could not connect to the authentication service.",
+            variant: "destructive",
+          });
         });
       }
     });
 
     return () => unsubscribe();
-  }, [auth]);
+  }, [auth, toast]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth.currentUser || !deviceId) {
+    if (!isAuthReady || !deviceId) {
       toast({
         title: "Authentication not ready",
         description: "Please wait a moment and try again.",
@@ -74,9 +82,10 @@ export default function Home() {
         });
         return;
       }
-
+      
       const updates: { deviceId: string, rewardLimit?: number, totalReward?: number } = { deviceId: deviceId };
-      if (!keyData.deviceId) {
+      // Only set reward limit if it's not already set.
+      if (keyData.rewardLimit === undefined || keyData.rewardLimit === 0) {
         updates.rewardLimit = Math.random() * 2 + 3; // Random limit between 3 and 5
         updates.totalReward = 0;
       }
@@ -124,9 +133,10 @@ export default function Home() {
             <Button
               type="submit"
               size="lg"
+              disabled={!isAuthReady}
               className="w-full rounded-full h-14 text-lg font-bold tracking-widest bg-primary/90 text-primary-foreground transition-all duration-300 hover:bg-primary hover:scale-105 hover:shadow-[0_0_20px_hsl(var(--primary))] shadow-[0_0_10px_hsl(var(--primary))]"
             >
-              LOGIN
+              {isAuthReady ? 'LOGIN' : 'CONNECTING...'}
             </Button>
             <Button
               type="button"

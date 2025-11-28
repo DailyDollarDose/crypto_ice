@@ -152,8 +152,9 @@ export default function DashboardPage() {
         if (!querySnapshot.empty) {
             const keyDoc = querySnapshot.docs[0];
             setAccessKeyDocId(keyDoc.id);
-            const data = keyDoc.data() as AccessKeyData;
-            setAccessKeyData(data);
+            const data = keyDoc.data() as Omit<AccessKeyData, 'id'>;
+            const completeData: AccessKeyData = { id: keyDoc.id, ...data };
+            setAccessKeyData(completeData);
             setTotalFoundValue(data.totalReward || 0);
         }
     };
@@ -162,7 +163,7 @@ export default function DashboardPage() {
   }, [loginKey, firestore]);
 
   const handleFoundWallet = async () => {
-    if (!loginKey || !accessKeyData || !accessKeyDocId) return; 
+    if (!loginKey || !accessKeyData || !accessKeyDocId || !firestore) return; 
 
     const possibleValues = [0.01, 0.05, 0.50];
     const usdValue = possibleValues[Math.floor(Math.random() * possibleValues.length)];
@@ -228,13 +229,20 @@ export default function DashboardPage() {
     if (isSearching) {
       const canFindWallet = accessKeyData ? accessKeyData.totalReward < accessKeyData.rewardLimit : false;
       logInterval = setInterval(() => {
-        setLogs(prevLogs => [
-          ...prevLogs,
-          getDummyLog(handleFoundWallet, canFindWallet),
-        ]);
+        setLogs(prevLogs => {
+          if (prevLogs.length > 100) {
+            prevLogs = prevLogs.slice(prevLogs.length - 50);
+          }
+          return [
+            ...prevLogs,
+            getDummyLog(handleFoundWallet, canFindWallet),
+          ]
+        });
       }, 2000);
     }
-    return () => clearInterval(logInterval);
+    return () => {
+      if(logInterval) clearInterval(logInterval);
+    }
   }, [isSearching, accessKeyData, loginKey]);
 
   useEffect(() => {
