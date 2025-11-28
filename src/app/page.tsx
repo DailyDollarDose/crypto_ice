@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth, useFirestore } from "@/firebase";
+import { useAuth, useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { collection, query, where, getDocs, doc, setDoc, updateDoc } from "firebase/firestore";
 import { signInAnonymously, onAuthStateChanged, User } from "firebase/auth";
 
@@ -51,7 +51,14 @@ export default function Home() {
     try {
       const accessKeysRef = collection(firestore, 'accessKeys');
       const q = query(accessKeysRef, where("key", "==", accessKey));
-      const querySnapshot = await getDocs(q);
+      const querySnapshot = await getDocs(q).catch(error => {
+        const contextualError = new FirestorePermissionError({
+          path: 'accessKeys',
+          operation: 'list'
+        });
+        errorEmitter.emit('permission-error', contextualError);
+        throw contextualError;
+      });
 
       if (querySnapshot.empty) {
         toast({
@@ -86,20 +93,30 @@ export default function Home() {
       }
 
       if (Object.keys(updates).length > 0) {
-          await updateDoc(keyDocRef, updates);
+          await updateDoc(keyDocRef, updates).catch(error => {
+            const contextualError = new FirestorePermissionError({
+                path: keyDocRef.path,
+                operation: 'update',
+                requestResourceData: updates,
+            });
+            errorEmitter.emit('permission-error', contextualError);
+            throw contextualError;
+          });
       }
 
 
       localStorage.setItem('userAccessKey', accessKey);
       router.push('/dashboard');
 
-    } catch (error) {
-      console.error("Login error:", error);
-      toast({
-        title: "Login Failed",
-        description: "An unexpected error occurred. Please check your key and connection.",
-        variant: "destructive",
-      });
+    } catch (error: any) {
+      if (error.name !== 'FirebaseError') {
+        console.error("Login error:", error);
+        toast({
+            title: "Login Failed",
+            description: "An unexpected error occurred. Please check your key and connection.",
+            variant: "destructive",
+        });
+      }
     }
   };
   
