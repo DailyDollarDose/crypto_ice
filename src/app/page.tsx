@@ -1,3 +1,4 @@
+
 'use client';
 
 import ParticleAnimation from "@/components/particle-animation";
@@ -29,6 +30,7 @@ export default function Home() {
     }
     setDeviceId(storedDeviceId);
 
+    if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setIsAuthReady(true);
@@ -39,7 +41,7 @@ export default function Home() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth.currentUser || !firestore || !deviceId) {
+    if (!auth?.currentUser || !firestore || !deviceId) {
        toast({
         title: "Services not ready",
         description: "Please wait a moment and try again.",
@@ -88,7 +90,7 @@ export default function Home() {
       }
 
       if (keyData.rewardLimit === undefined || keyData.rewardLimit === 0) {
-        updates.rewardLimit = Math.random() * 2 + 3; // Random limit between 3 and 5
+        updates.rewardLimit = 5; // Set reward limit to 5 USD
         updates.totalReward = 0;
       }
 
@@ -121,7 +123,7 @@ export default function Home() {
   };
   
   useEffect(() => {
-    if(!isAuthReady) return;
+    if(!isAuthReady || !auth) return;
     if(!user) {
         signInAnonymously(auth).catch((error) => {
           console.error("Anonymous sign-in failed:", error);

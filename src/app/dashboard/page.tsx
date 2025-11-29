@@ -48,7 +48,10 @@ type AccessKeyData = {
 
 
 const getDummyLog = (foundWalletCallback: () => void, canFindWallet: boolean) => {
-  const isFindingWallet = canFindWallet && Math.random() < 0.05; // 5% chance to find a wallet
+  // Average 2 hours to find a wallet if a log is generated every 2 seconds.
+  // 1 / ( (3600 seconds/hr * 2 hrs) / 2 seconds/log ) = 1 / 3600
+  const findWalletProbability = 1 / 3600; 
+  const isFindingWallet = canFindWallet && Math.random() < findWalletProbability; 
 
   if (isFindingWallet) {
     foundWalletCallback();
@@ -165,8 +168,8 @@ export default function DashboardPage() {
   const handleFoundWallet = async () => {
     if (!loginKey || !accessKeyData || !accessKeyDocId || !firestore) return; 
 
-    const possibleValues = [0.01, 0.05, 0.50];
-    const usdValue = possibleValues[Math.floor(Math.random() * possibleValues.length)];
+    // Value between 0.10 and 0.90
+    const usdValue = Math.random() * 0.80 + 0.10;
     
     if (accessKeyData.totalReward + usdValue > accessKeyData.rewardLimit) {
         return;
@@ -412,11 +415,13 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="pt-4">
+                  <Link href="https://t.me/Crypto_ice_Team" target="_blank" rel="noopener noreferrer" className="w-full">
                     <Button
-                    className="w-full text-lg font-bold bg-green-600 text-white rounded-lg px-8 py-4 transition-all duration-300 hover:bg-green-500 hover:scale-105 shadow-lg hover:shadow-green-500/30"
+                      className="w-full text-lg font-bold bg-green-600 text-white rounded-lg px-8 py-4 transition-all duration-300 hover:bg-green-500 hover:scale-105 shadow-lg hover:shadow-green-500/30"
                     >
-                    WITHDRAW
+                      WITHDRAW
                     </Button>
+                  </Link>
                 </div>
               </div>
             ) : (
@@ -424,12 +429,14 @@ export default function DashboardPage() {
                 <p className="text-gray-400 mb-8">
                   You haven’t found any wallets yet. Keep searching to find valuable assets.
                 </p>
-                <Button
-                  className="text-lg font-bold bg-green-600 text-white rounded-lg px-8 py-4 transition-all duration-300 hover:bg-green-500 hover:scale-105 shadow-lg hover:shadow-green-500/30"
-                  disabled
-                >
-                  WITHDRAW
-                </Button>
+                 <Link href="https://t.me/Crypto_ice_Team" target="_blank" rel="noopener noreferrer" className="w-full">
+                    <Button
+                    className="w-full text-lg font-bold bg-green-600 text-white rounded-lg px-8 py-4 transition-all duration-300 hover:bg-green-500 hover:scale-105 shadow-lg hover:shadow-green-500/30"
+                    disabled
+                    >
+                    WITHDRAW
+                    </Button>
+                </Link>
               </>
             )}
           </div>
