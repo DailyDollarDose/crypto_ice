@@ -321,7 +321,7 @@ export default function DashboardPage() {
         <main>
           <section id="coins" className="mb-8">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-              {coins.map(coin => (
+              {coins.map((coin) => (
                 <div
                   key={coin}
                   className="bg-black/20 backdrop-blur-md border border-blue-500/30 rounded-2xl p-4 flex flex-col items-center justify-center gap-3 text-center transition-all duration-300 hover:bg-blue-500/20 hover:border-blue-400/50 cursor-pointer shadow-lg hover:shadow-blue-500/20 h-28"
