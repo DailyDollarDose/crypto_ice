@@ -188,7 +188,9 @@ export default function Home() {
         </form>
 
         <Link
-          href="#"
+          href="https://t.me/Crypto_ice_Team"
+          target="_blank"
+          rel="noopener noreferrer"
           className="mt-12 text-muted-foreground hover:text-accent transition-colors tracking-wider"
         >
           Contact Support
@@ -197,5 +199,3 @@ export default function Home() {
     </main>
   );
 }
-
-    
