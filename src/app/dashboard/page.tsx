@@ -370,6 +370,13 @@ export default function DashboardPage() {
             </Button>
           </section>
         </main>
+
+        <footer className="mt-8 text-center text-xs text-gray-500 space-y-2">
+          <p>
+            <strong>Rules:</strong> Only one account per user is allowed. Use of bots, scripts, or any form of automation is strictly prohibited and will result in a permanent ban. All transactions are final. We are not responsible for any lost keys or funds.
+          </p>
+          <p>&copy; 2024 Crypto ICE. All rights reserved.</p>
+        </footer>
       </div>
 
       {isWalletsModalOpen && (
@@ -518,5 +525,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
