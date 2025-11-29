@@ -128,7 +128,6 @@ export default function DashboardPage() {
   const [logs, setLogs] = useState<{text: string, color: string}[]>([]);
   const [isModalOpen, setModalOpen] = useState(false);
   const [foundWallets, setFoundWallets] = useState<FoundWallet[]>([]);
-  const [totalFoundValue, setTotalFoundValue] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
   const [userWithdrawAddress, setUserWithdrawAddress] = useState('');
   const [loginKey, setLoginKey] = useState('');
@@ -159,7 +158,6 @@ export default function DashboardPage() {
             const data = keyDoc.data() as Omit<AccessKeyData, 'id'>;
             const completeData: AccessKeyData = { id: keyDoc.id, ...data };
             setAccessKeyData(completeData);
-            setTotalFoundValue(data.totalReward || 0);
         }
     };
 
@@ -185,7 +183,6 @@ export default function DashboardPage() {
     });
 
     setAccessKeyData(prev => prev ? { ...prev, totalReward: newTotalReward, lastFoundDate: new Timestamp(Math.floor(Date.now()/1000), 0) } : null);
-    setTotalFoundValue(newTotalReward);
 
     const asset = Math.random() > 0.5 ? 'BTC' : 'ETH';
     const btcPrice = 60000;
@@ -217,7 +214,6 @@ export default function DashboardPage() {
   const stopSearch = () => {
     setIsSearching(false);
     setLogs(prev => [...prev, {text: 'Search stopped.', color: 'text-red-400'}]);
-    setModalOpen(true);
   };
   
   useEffect(() => {
@@ -234,7 +230,11 @@ export default function DashboardPage() {
     let logInterval: NodeJS.Timeout;
     if (isSearching) {
       const hasReachedLimit = accessKeyData ? accessKeyData.totalReward >= accessKeyData.rewardLimit : false;
-      const isFirstFind = accessKeyData ? !accessKeyData.lastFoundDate : true;
+      let isFirstFind = false;
+      if (accessKeyData && accessKeyData.lastFoundDate === null) {
+        isFirstFind = true;
+      }
+      
       let canFindWallet = !hasReachedLimit;
       
       if (!isFirstFind && accessKeyData?.lastFoundDate) {
@@ -453,3 +453,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
