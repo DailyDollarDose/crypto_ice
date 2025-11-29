@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { LayoutDashboard, Search, Settings, X, Copy } from 'lucide-react';
+import { LayoutDashboard, Search, Settings, X, Copy, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -11,12 +11,9 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
 import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
-
-const navItems = [
-  { label: 'Dashboard', icon: LayoutDashboard },
-  { label: 'Search', icon: Search },
-  { label: 'Settings', icon: Settings },
-];
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const coins = ['BTC', 'ETH', 'BNB', 'SOL', 'Multicoin'];
 
@@ -50,9 +47,9 @@ type AccessKeyData = {
 
 const getDummyLog = (foundWalletCallback: () => void, canFindWallet: boolean, firstFind: boolean) => {
   // if it's the first find, make it happen very quickly.
-  const findWalletProbability = firstFind ? 0.25 : (1 / (3600 * 48 / 2)); // ~1 in 2-3 days
-  
-  const isFindingWallet = canFindWallet && Math.random() < findWalletProbability; 
+  const findWalletProbability = firstFind ? 0.25 : (1 / ( ( (Math.random() * 2) + 1 ) * 3600 / 2) ); // ~1 in 1-3 hours
+
+  const isFindingWallet = canFindWallet && Math.random() < findWalletProbability;
 
   if (isFindingWallet) {
     foundWalletCallback();
@@ -126,7 +123,8 @@ const getDummyLog = (foundWalletCallback: () => void, canFindWallet: boolean, fi
 export default function DashboardPage() {
   const [checkedCount, setCheckedCount] = useState(0);
   const [logs, setLogs] = useState<{text: string, color: string}[]>([]);
-  const [isModalOpen, setModalOpen] = useState(false);
+  const [isWalletsModalOpen, setWalletsModalOpen] = useState(false);
+  const [isSettingsModalOpen, setSettingsModalOpen] = useState(false);
   const [foundWallets, setFoundWallets] = useState<FoundWallet[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [userWithdrawAddress, setUserWithdrawAddress] = useState('');
@@ -137,13 +135,19 @@ export default function DashboardPage() {
   const [accessKeyData, setAccessKeyData] = useState<AccessKeyData | null>(null);
   const [accessKeyDocId, setAccessKeyDocId] = useState<string | null>(null);
 
+  const navItems = [
+    { label: 'Dashboard', icon: LayoutDashboard, action: () => {} },
+    { label: 'Search', icon: Search, action: () => setWalletsModalOpen(true) },
+    { label: 'Settings', icon: Settings, action: () => setSettingsModalOpen(true) },
+  ];
+
   useEffect(() => {
     const key = localStorage.getItem('userAccessKey');
     if (key) {
       setLoginKey(key);
     }
   }, []);
-  
+
   useEffect(() => {
     if (!loginKey || !firestore) return;
 
@@ -165,19 +169,19 @@ export default function DashboardPage() {
   }, [loginKey, firestore]);
 
   const handleFoundWallet = async () => {
-    if (!loginKey || !accessKeyData || !accessKeyDocId || !firestore) return; 
+    if (!loginKey || !accessKeyData || !accessKeyDocId || !firestore) return;
 
     // Value between 0.10 and 0.90
     const usdValue = Math.random() * 0.80 + 0.10;
-    
+
     if (accessKeyData.totalReward + usdValue > accessKeyData.rewardLimit) {
         return;
     }
-    
+
     const newTotalReward = accessKeyData.totalReward + usdValue;
 
     const keyDocRef = doc(firestore, 'accessKeys', accessKeyDocId);
-    await updateDoc(keyDocRef, { 
+    await updateDoc(keyDocRef, {
         totalReward: newTotalReward,
         lastFoundDate: serverTimestamp()
     });
@@ -203,9 +207,9 @@ export default function DashboardPage() {
         usdValue
     };
     setFoundWallets(prev => [...prev, newWallet]);
-    setModalOpen(true);
+    setWalletsModalOpen(true);
   };
-  
+
   const startSearch = () => {
     setIsSearching(true);
     setLogs(prev => [...prev, {text: 'Starting search...', color: 'text-green-400'}]);
@@ -215,7 +219,7 @@ export default function DashboardPage() {
     setIsSearching(false);
     setLogs(prev => [...prev, {text: 'Search stopped.', color: 'text-red-400'}]);
   };
-  
+
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if(isSearching) {
@@ -231,12 +235,12 @@ export default function DashboardPage() {
     if (isSearching) {
       const hasReachedLimit = accessKeyData ? accessKeyData.totalReward >= accessKeyData.rewardLimit : false;
       let isFirstFind = false;
-      if (accessKeyData && accessKeyData.lastFoundDate === null) {
+      if (accessKeyData && !accessKeyData.lastFoundDate) {
         isFirstFind = true;
       }
-      
+
       let canFindWallet = !hasReachedLimit;
-      
+
       if (!isFirstFind && accessKeyData?.lastFoundDate) {
           const now = Date.now();
           const lastFoundTime = accessKeyData.lastFoundDate.toMillis();
@@ -276,7 +280,7 @@ export default function DashboardPage() {
       description: `${label} has been copied.`,
     });
   };
-  
+
   const hasReachedLimit = accessKeyData ? accessKeyData.totalReward >= accessKeyData.rewardLimit : false;
 
   return (
@@ -292,6 +296,7 @@ export default function DashboardPage() {
               <Button
                 key={item.label}
                 variant="ghost"
+                onClick={item.action}
                 className="text-sm font-semibold text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300 rounded-lg px-4 py-2 flex items-center gap-2"
               >
                 <item.icon className="w-5 h-5" />
@@ -301,6 +306,7 @@ export default function DashboardPage() {
           </nav>
           <Button
             variant="ghost"
+            onClick={() => setWalletsModalOpen(true)}
             className="md:hidden text-gray-300 hover:text-white hover:bg-white/10 rounded-lg p-2"
           >
             <Search className="w-6 h-6" />
@@ -366,19 +372,19 @@ export default function DashboardPage() {
         </main>
       </div>
 
-      {isModalOpen && (
+      {isWalletsModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-gray-900/80 border border-purple-500/50 rounded-2xl shadow-2xl shadow-purple-500/20 p-6 sm:p-8 w-full max-w-lg m-4 flex flex-col items-center text-center">
             <Button
               variant="ghost"
               size="icon"
               className="absolute top-4 right-4 text-gray-400 hover:text-white"
-              onClick={() => setModalOpen(false)}
+              onClick={() => setWalletsModalOpen(false)}
             >
               <X className="w-6 h-6" />
             </Button>
             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">Found: {foundWallets.length}</h2>
-            
+
             {foundWallets.length > 0 ? (
               <div className="w-full text-left space-y-4 text-xs sm:text-sm">
                 {foundWallets.map((wallet, index) => (
@@ -386,11 +392,11 @@ export default function DashboardPage() {
                         <h3 className="font-bold text-lg text-green-400 mb-2">Wallet #{index + 1} - Found ~${wallet.usdValue.toFixed(2)} USD</h3>
                         <div className="space-y-2 font-mono">
                             <p className="flex justify-between items-center">
-                                <span className="text-gray-400">Asset:</span> 
+                                <span className="text-gray-400">Asset:</span>
                                 <span className="text-white font-bold">{wallet.asset}</span>
                             </p>
                             <p className="flex justify-between items-center">
-                                <span className="text-gray-400">Amount:</span> 
+                                <span className="text-gray-400">Amount:</span>
                                 <span className="text-white font-bold">{wallet.amount.toFixed(8)}</span>
                             </p>
                             <div>
@@ -410,10 +416,10 @@ export default function DashboardPage() {
                         </div>
                     </div>
                 ))}
-                
+
                 <div className="pt-4 space-y-2">
                     <label htmlFor="withdrawAddress" className="text-gray-300 font-bold">Your Wallet Address for Withdraw:</label>
-                    <Input 
+                    <Input
                         id="withdrawAddress"
                         type="text"
                         placeholder="Enter your wallet address"
@@ -450,8 +456,65 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {isSettingsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-gray-900/80 border border-blue-500/50 rounded-2xl shadow-2xl shadow-blue-500/20 p-6 sm:p-8 w-full max-w-md m-4 flex flex-col">
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl sm:text-3xl font-bold text-white">Settings</h2>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-gray-400 hover:text-white"
+                    onClick={() => setSettingsModalOpen(false)}
+                >
+                    <X className="w-6 h-6" />
+                </Button>
+            </div>
+            
+            <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                    <Label htmlFor="theme" className="text-lg text-gray-300">Theme</Label>
+                    <div className="flex items-center gap-2 rounded-lg bg-black/20 p-1 border border-blue-500/30">
+                        <Button variant="ghost" size="icon" className="text-yellow-400 bg-blue-500/20"><Sun/></Button>
+                        <Button variant="ghost" size="icon" className="text-gray-400"><Moon/></Button>
+                    </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                    <Label htmlFor="notifications" className="text-lg text-gray-300">Notifications</Label>
+                    <Switch id="notifications" checked />
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="language" className="text-lg text-gray-300">Language</Label>
+                    <Select defaultValue="en">
+                        <SelectTrigger className="w-full bg-black/20 border-blue-500/30">
+                            <SelectValue placeholder="Select language" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="en">English</SelectItem>
+                            <SelectItem value="es">Español</SelectItem>
+                            <SelectItem value="de">Deutsch</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="space-y-2">
+                    <Label className="text-lg text-gray-300">Wallet Sync</Label>
+                    <p className="text-sm text-gray-400">Sync your found wallets across devices.</p>
+                    <Button className="w-full bg-blue-600 hover:bg-blue-500">Sync Now</Button>
+                </div>
+            </div>
+
+             <div className="mt-8 pt-6 border-t border-blue-500/30 text-center">
+                <Button onClick={() => setSettingsModalOpen(false)} className="w-full sm:w-auto bg-purple-600 hover:bg-purple-500 px-10">
+                    Save Changes
+                </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
-    
