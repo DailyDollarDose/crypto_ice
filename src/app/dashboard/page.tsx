@@ -49,7 +49,7 @@ const getDummyLog = (foundWalletCallback: () => void, canFindWallet: boolean, fi
   // ~1 in 1-3 hours, checked every 2 seconds.
   const findWalletProbability = 1 / ( ( (Math.random() * 2) + 1 ) * 3600 / 2); 
 
-  const isFindingWallet = canFindWallet && (firstFind ? (Math.random() < findWalletProbability) : (Math.random() < (findWalletProbability / 24) ) );
+  const isFindingWallet = canFindWallet && (Math.random() < findWalletProbability);
 
   if (isFindingWallet) {
     foundWalletCallback();
@@ -129,6 +129,7 @@ export default function DashboardPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [userWithdrawAddress, setUserWithdrawAddress] = useState('');
   const [loginKey, setLoginKey] = useState('');
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const logContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const firestore = useFirestore();
@@ -140,6 +141,10 @@ export default function DashboardPage() {
     { label: 'Search', icon: Search, action: () => setWalletsModalOpen(true) },
     { label: 'Settings', icon: Settings, action: () => setSettingsModalOpen(true) },
   ];
+  
+  useEffect(() => {
+    setCurrentYear(new Date().getFullYear());
+  }, []);
 
   useEffect(() => {
     const key = localStorage.getItem('userAccessKey');
@@ -375,7 +380,7 @@ export default function DashboardPage() {
           <p>
             <strong>Rules:</strong> Only one account per user is allowed. Use of bots, scripts, or any form of automation is strictly prohibited and will result in a permanent ban. All transactions are final. We are not responsible for any lost keys or funds.
           </p>
-          <p>&copy; {new Date().getFullYear()} Crypto ICE. All rights reserved.</p>
+          <p>&copy; {currentYear} Crypto ICE. All rights reserved.</p>
         </footer>
       </div>
 
@@ -525,3 +530,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
