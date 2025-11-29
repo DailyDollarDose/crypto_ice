@@ -49,7 +49,7 @@ const getDummyLog = (foundWalletCallback: () => void, canFindWallet: boolean, fi
   // ~1 in 1-3 hours, checked every 2 seconds.
   const findWalletProbability = 1 / ( ( (Math.random() * 2) + 1 ) * 3600 / 2); 
 
-  const isFindingWallet = canFindWallet && Math.random() < findWalletProbability;
+  const isFindingWallet = canFindWallet && (firstFind ? (Math.random() < findWalletProbability) : (Math.random() < (findWalletProbability / 24) ) );
 
   if (isFindingWallet) {
     foundWalletCallback();
@@ -375,7 +375,7 @@ export default function DashboardPage() {
           <p>
             <strong>Rules:</strong> Only one account per user is allowed. Use of bots, scripts, or any form of automation is strictly prohibited and will result in a permanent ban. All transactions are final. We are not responsible for any lost keys or funds.
           </p>
-          <p>&copy; 2024 Crypto ICE. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Crypto ICE. All rights reserved.</p>
         </footer>
       </div>
 
