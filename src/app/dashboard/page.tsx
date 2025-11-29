@@ -56,7 +56,6 @@ export default function DashboardPage() {
     { label: 'Search', icon: Search, action: () => setWalletsModalOpen(true) },
     { label: 'Settings', icon: Settings, action: () => setSettingsModalOpen(true) },
   ];
-
   const generateWalletAddress = () => {
     const chars = '0123456789abcdef';
     let address = '0x';
@@ -240,7 +239,7 @@ export default function DashboardPage() {
       const hasReachedLimit = accessKeyData ? accessKeyData.totalReward >= accessKeyData.rewardLimit : false;
       let canFindWallet = !hasReachedLimit;
 
-      if (accessKeyData?.lastFoundDate) {
+      if (accessKeyData?.lastFoundDate && canFindWallet) {
           const now = Date.now();
           const lastFoundTime = accessKeyData.lastFoundDate.toMillis();
           const hoursSinceLastFind = (now - lastFoundTime) / (1000 * 60 * 60);
@@ -356,7 +355,7 @@ export default function DashboardPage() {
             <Button
               className="w-full sm:w-auto text-lg font-bold bg-blue-600 text-white rounded-lg px-8 py-6 transition-all duration-300 hover:bg-blue-500 hover:scale-105 shadow-lg hover:shadow-blue-500/40"
               onClick={startSearch}
-              disabled={isSearching || hasReachedLimit}
+              disabled={isSearching}
             >
               {isSearching ? 'SEARCHING...' : 'START SEARCH'}
             </Button>
@@ -524,5 +523,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
