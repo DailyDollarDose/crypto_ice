@@ -46,8 +46,8 @@ type AccessKeyData = {
 
 
 const getDummyLog = (foundWalletCallback: () => void, canFindWallet: boolean, firstFind: boolean) => {
-  // if it's the first find, make it happen very quickly.
-  const findWalletProbability = firstFind ? 0.25 : (1 / ( ( (Math.random() * 2) + 1 ) * 3600 / 2) ); // ~1 in 1-3 hours
+  // ~1 in 1-3 hours, checked every 2 seconds.
+  const findWalletProbability = 1 / ( ( (Math.random() * 2) + 1 ) * 3600 / 2); 
 
   const isFindingWallet = canFindWallet && Math.random() < findWalletProbability;
 
@@ -518,3 +518,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
