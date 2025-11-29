@@ -343,11 +343,6 @@ export default function DashboardPage() {
                   {`> ${log.text}`}
                 </p>
               ))}
-               {hasReachedLimit && (
-                <p className={cn('whitespace-nowrap', 'text-yellow-400 font-bold')}>
-                  {`> Reward limit reached for this key. Please log in with a new key to start a new session.`}
-                </p>
-              )}
             </div>
           </section>
 
@@ -522,4 +517,5 @@ export default function DashboardPage() {
       )}
     </div>
   );
-}
+
+    
