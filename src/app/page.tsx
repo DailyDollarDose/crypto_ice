@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
-import { collection, query, where, getDocs, doc, setDoc, updateDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { signInAnonymously, onAuthStateChanged, User } from "firebase/auth";
 
 export default function Home() {
@@ -93,6 +93,11 @@ export default function Home() {
         updates.rewardLimit = 5; // Set reward limit to 5 USD
         updates.totalReward = 0;
       }
+      
+      if (!keyData.lastFoundDate) {
+        updates.lastFoundDate = null;
+      }
+
 
       if (Object.keys(updates).length > 0) {
           await updateDoc(keyDocRef, updates).catch(error => {
@@ -192,3 +197,5 @@ export default function Home() {
     </main>
   );
 }
+
+    

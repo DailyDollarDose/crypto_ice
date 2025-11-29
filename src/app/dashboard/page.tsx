@@ -10,7 +10,7 @@ import ParticleAnimation from '@/components/particle-animation';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
-import { collection, query, where, getDocs, doc, setDoc, updateDoc, increment } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard },
@@ -44,13 +44,14 @@ type AccessKeyData = {
     deviceId: string;
     rewardLimit: number;
     totalReward: number;
+    lastFoundDate?: Timestamp;
 };
 
 
-const getDummyLog = (foundWalletCallback: () => void, canFindWallet: boolean) => {
-  // Average 2 hours to find a wallet if a log is generated every 2 seconds.
-  // 1 / ( (3600 seconds/hr * 2 hrs) / 2 seconds/log ) = 1 / 3600
-  const findWalletProbability = 1 / 3600; 
+const getDummyLog = (foundWalletCallback: () => void, canFindWallet: boolean, firstFind: boolean) => {
+  // if it's the first find, make it happen very quickly.
+  const findWalletProbability = firstFind ? 0.25 : (1 / (3600 * 48 / 2)); // ~1 in 2-3 days
+  
   const isFindingWallet = canFindWallet && Math.random() < findWalletProbability; 
 
   if (isFindingWallet) {
@@ -178,11 +179,13 @@ export default function DashboardPage() {
     const newTotalReward = accessKeyData.totalReward + usdValue;
 
     const keyDocRef = doc(firestore, 'accessKeys', accessKeyDocId);
-    await updateDoc(keyDocRef, { totalReward: newTotalReward });
+    await updateDoc(keyDocRef, { 
+        totalReward: newTotalReward,
+        lastFoundDate: serverTimestamp()
+    });
 
-    setAccessKeyData(prev => prev ? { ...prev, totalReward: newTotalReward } : null);
+    setAccessKeyData(prev => prev ? { ...prev, totalReward: newTotalReward, lastFoundDate: new Timestamp(Math.floor(Date.now()/1000), 0) } : null);
     setTotalFoundValue(newTotalReward);
-
 
     const asset = Math.random() > 0.5 ? 'BTC' : 'ETH';
     const btcPrice = 60000;
@@ -230,7 +233,19 @@ export default function DashboardPage() {
   useEffect(() => {
     let logInterval: NodeJS.Timeout;
     if (isSearching) {
-      const canFindWallet = accessKeyData ? accessKeyData.totalReward < accessKeyData.rewardLimit : false;
+      const hasReachedLimit = accessKeyData ? accessKeyData.totalReward >= accessKeyData.rewardLimit : false;
+      const isFirstFind = accessKeyData ? !accessKeyData.lastFoundDate : true;
+      let canFindWallet = !hasReachedLimit;
+      
+      if (!isFirstFind && accessKeyData?.lastFoundDate) {
+          const now = Date.now();
+          const lastFoundTime = accessKeyData.lastFoundDate.toMillis();
+          const hoursSinceLastFind = (now - lastFoundTime) / (1000 * 60 * 60);
+          if (hoursSinceLastFind < 48) { // 48 hours for 2 days
+              canFindWallet = false;
+          }
+      }
+
       logInterval = setInterval(() => {
         setLogs(prevLogs => {
           if (prevLogs.length > 100) {
@@ -238,7 +253,7 @@ export default function DashboardPage() {
           }
           return [
             ...prevLogs,
-            getDummyLog(handleFoundWallet, canFindWallet),
+            getDummyLog(handleFoundWallet, canFindWallet, isFirstFind),
           ]
         });
       }, 2000);
@@ -432,7 +447,6 @@ export default function DashboardPage() {
                  <Link href="https://t.me/Crypto_ice_Team" target="_blank" rel="noopener noreferrer" className="w-full">
                     <Button
                     className="w-full text-lg font-bold bg-green-600 text-white rounded-lg px-8 py-4 transition-all duration-300 hover:bg-green-500 hover:scale-105 shadow-lg hover:shadow-green-500/30"
-                    disabled
                     >
                     WITHDRAW
                     </Button>
@@ -445,3 +459,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
