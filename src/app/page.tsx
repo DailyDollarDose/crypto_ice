@@ -53,13 +53,13 @@ export default function Home() {
       const q = query(accessKeysRef, where("key", "==", accessKey));
       const querySnapshot = await getDocs(q).catch(error => {
         const contextualError = new FirestorePermissionError({
-          path: 'accessKeys',
-          operation: 'list'
+          path: `accessKeys`,
+          operation: 'list',
         });
         errorEmitter.emit('permission-error', contextualError);
         throw contextualError;
       });
-
+      
       if (querySnapshot.empty) {
         toast({
           title: "Access Denied",
@@ -167,14 +167,16 @@ export default function Home() {
             >
               {isAuthReady && user ? 'LOGIN' : 'CONNECTING...'}
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              className="w-full rounded-full h-14 text-lg font-bold tracking-widest bg-secondary/80 backdrop-blur-sm border-accent/50 text-accent transition-all duration-300 hover:scale-105 hover:bg-accent/20 hover:shadow-[0_0_20px_hsl(var(--accent))]"
-            >
-              Buy access
-            </Button>
+            <Link href="https://t.me/Crypto_ice_Team" target="_blank" rel="noopener noreferrer" className="w-full">
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className="w-full rounded-full h-14 text-lg font-bold tracking-widest bg-secondary/80 backdrop-blur-sm border-accent/50 text-accent transition-all duration-300 hover:scale-105 hover:bg-accent/20 hover:shadow-[0_0_20px_hsl(var(--accent))]"
+              >
+                Buy access
+              </Button>
+            </Link>
           </div>
         </form>
 
