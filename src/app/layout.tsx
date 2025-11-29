@@ -12,8 +12,8 @@ const orbitron = Orbitron({
 });
 
 export const metadata: Metadata = {
-  title: "Crypto Ice Access",
-  description: "Enter your key to access Crypto Ice.",
+  title: "Crypto Ice Access v2",
+  description: "Enter your key to access Crypto Ice v2.",
 };
 
 export default function RootLayout({

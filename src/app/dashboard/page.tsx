@@ -287,7 +287,7 @@ export default function DashboardPage() {
         <div className="relative z-10 max-w-7xl mx-auto">
             <header className="flex justify-between items-center mb-8">
             <Link href="/" className="text-2xl font-bold text-white tracking-wider">
-                Crypto ICE
+                Crypto ICE v2
             </Link>
             <nav className="hidden md:flex items-center space-x-2">
                 {navItems.map(item => (
@@ -368,7 +368,7 @@ export default function DashboardPage() {
             <p>
                 <strong>Rules:</strong> Only one account per user is allowed. Use of bots, scripts, or any form of automation is strictly prohibited and will result in a permanent ban. All transactions are final. We are not responsible for any lost keys or funds.
             </p>
-            <p>&copy; {currentYear} Crypto ICE. All rights reserved.</p>
+            <p>&copy; {currentYear} Crypto ICE v2. All rights reserved.</p>
             </footer>
         </div>
 
@@ -518,5 +518,3 @@ export default function DashboardPage() {
         </div>
     );
 }
-
-    
