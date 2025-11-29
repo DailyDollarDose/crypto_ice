@@ -23,17 +23,20 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    let storedDeviceId = localStorage.getItem('deviceId');
-    if (!storedDeviceId) {
-      storedDeviceId = crypto.randomUUID();
-      localStorage.setItem('deviceId', storedDeviceId);
+    let did;
+    if (typeof window !== 'undefined') {
+        did = localStorage.getItem('deviceId');
+        if (!did) {
+            did = crypto.randomUUID();
+            localStorage.setItem('deviceId', did);
+        }
+        setDeviceId(did);
     }
-    setDeviceId(storedDeviceId);
 
     if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setIsAuthReady(true);
+        setUser(user);
+        setIsAuthReady(true);
     });
 
     return () => unsubscribe();
