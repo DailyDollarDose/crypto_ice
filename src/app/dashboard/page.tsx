@@ -411,12 +411,6 @@ export default function DashboardPage() {
                     </div>
                 ))}
                 
-                {accessKeyData && (
-                    <div className="pt-4 text-center text-gray-300">
-                        Total Found: ~${totalFoundValue.toFixed(2)} / ~${accessKeyData.rewardLimit.toFixed(2)} USDT
-                    </div>
-                )}
-
                 <div className="pt-4 space-y-2">
                     <label htmlFor="withdrawAddress" className="text-gray-300 font-bold">Your Wallet Address for Withdraw:</label>
                     <Input 
@@ -459,5 +453,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
