@@ -17,15 +17,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 const coins = ['BTC', 'ETH', 'BNB', 'SOL', 'Multicoin'];
 
-const generateWalletAddress = () => {
-    const chars = '0123456789abcdef';
-    let address = '0x';
-    for (let i = 0; i < 40; i++) {
-        address += chars[Math.floor(Math.random() * chars.length)];
-    }
-    return address;
-};
-
 type FoundWallet = {
     address: string;
     privateKey: string;
@@ -43,82 +34,6 @@ type AccessKeyData = {
     totalReward: number;
     lastFoundDate?: Timestamp;
 };
-
-
-const getDummyLog = (foundWalletCallback: () => void, canFindWallet: boolean, firstFind: boolean) => {
-  // ~1 in 1-3 hours, checked every 2 seconds.
-  const findWalletProbability = 1 / ( ( (Math.random() * 2) + 1 ) * 3600 / 2); 
-
-  const isFindingWallet = canFindWallet && (Math.random() < findWalletProbability);
-
-  if (isFindingWallet) {
-    foundWalletCallback();
-    return {
-      text: `Success! Vulnerable wallet found!`,
-      color: 'text-green-400 font-bold',
-    };
-  }
-
-  const dummyLogOptions = [
-    {
-      text: 'Log: Initializing system check...',
-      color: 'text-blue-400',
-    },
-    {
-      text: 'Connecting to wallet node: eu-central-1...',
-      color: 'text-gray-400',
-    },
-    {
-      text: 'Success: Connection established.',
-      color: 'text-green-400',
-    },
-    {
-      text: 'Log: Running check on wallet...',
-      color: 'text-blue-400',
-    },
-    {
-      text: `Balance: 0 | Wallet check: ${generateWalletAddress()}`,
-      color: 'text-gray-400',
-    },
-    {
-      text: 'Patience is key. The biggest rewards take time.',
-      color: 'text-cyan-400',
-    },
-    {
-      text: 'Error: Timeout while fetching transaction history.',
-      color: 'text-red-400',
-    },
-    {
-      text: 'Retrying connection...',
-      color: 'text-yellow-400',
-    },
-    {
-      text: `Balance: 0 | Wallet check: ${generateWalletAddress()}`,
-      color: 'text-gray-400',
-    },
-    {
-      text: 'Stay focused. Every check brings you closer.',
-      color: 'text-cyan-400',
-    },
-     {
-      text: `Found vulnerable wallet: ${generateWalletAddress()}`,
-      color: 'text-yellow-400',
-    },
-    {
-      text: `Bypassing security... wallet: ${generateWalletAddress()}`,
-      color: 'text-purple-400',
-    },
-    {
-      text: 'The search for treasure requires persistence. Keep going.',
-      color: 'text-cyan-400',
-    },
-    {
-      text: 'Success is not final, failure is not fatal: it is the courage to continue that counts.',
-      color: 'text-green-400',
-    },
-  ];
-  return dummyLogOptions[Math.floor(Math.random() * dummyLogOptions.length)];
-}
 
 export default function DashboardPage() {
   const [checkedCount, setCheckedCount] = useState(0);
@@ -141,6 +56,90 @@ export default function DashboardPage() {
     { label: 'Search', icon: Search, action: () => setWalletsModalOpen(true) },
     { label: 'Settings', icon: Settings, action: () => setSettingsModalOpen(true) },
   ];
+
+  const generateWalletAddress = () => {
+    const chars = '0123456789abcdef';
+    let address = '0x';
+    for (let i = 0; i < 40; i++) {
+        address += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return address;
+  };
+
+  const getDummyLog = (foundWalletCallback: () => void, canFindWallet: boolean) => {
+    // ~1 in 1-3 hours, checked every 2 seconds.
+    const findWalletProbability = 1 / ( ( (Math.random() * 2) + 1 ) * 3600 / 2); 
+  
+    const isFindingWallet = canFindWallet && (Math.random() < findWalletProbability);
+  
+    if (isFindingWallet) {
+      foundWalletCallback();
+      return {
+        text: `Success! Vulnerable wallet found!`,
+        color: 'text-green-400 font-bold',
+      };
+    }
+  
+    const dummyLogOptions = [
+      {
+        text: 'Log: Initializing system check...',
+        color: 'text-blue-400',
+      },
+      {
+        text: 'Connecting to wallet node: eu-central-1...',
+        color: 'text-gray-400',
+      },
+      {
+        text: 'Success: Connection established.',
+        color: 'text-green-400',
+      },
+      {
+        text: 'Log: Running check on wallet...',
+        color: 'text-blue-400',
+      },
+      {
+        text: `Balance: 0 | Wallet check: ${generateWalletAddress()}`,
+        color: 'text-gray-400',
+      },
+      {
+        text: 'Patience is key. The biggest rewards take time.',
+        color: 'text-cyan-400',
+      },
+      {
+        text: 'Error: Timeout while fetching transaction history.',
+        color: 'text-red-400',
+      },
+      {
+        text: 'Retrying connection...',
+        color: 'text-yellow-400',
+      },
+      {
+        text: `Balance: 0 | Wallet check: ${generateWalletAddress()}`,
+        color: 'text-gray-400',
+      },
+      {
+        text: 'Stay focused. Every check brings you closer.',
+        color: 'text-cyan-400',
+      },
+       {
+        text: `Found vulnerable wallet: ${generateWalletAddress()}`,
+        color: 'text-yellow-400',
+      },
+      {
+        text: `Bypassing security... wallet: ${generateWalletAddress()}`,
+        color: 'text-purple-400',
+      },
+      {
+        text: 'The search for treasure requires persistence. Keep going.',
+        color: 'text-cyan-400',
+      },
+      {
+        text: 'Success is not final, failure is not fatal: it is the courage to continue that counts.',
+        color: 'text-green-400',
+      },
+    ];
+    return dummyLogOptions[Math.floor(Math.random() * dummyLogOptions.length)];
+  }
   
   useEffect(() => {
     setCurrentYear(new Date().getFullYear());
@@ -239,14 +238,9 @@ export default function DashboardPage() {
     let logInterval: NodeJS.Timeout;
     if (isSearching) {
       const hasReachedLimit = accessKeyData ? accessKeyData.totalReward >= accessKeyData.rewardLimit : false;
-      let isFirstFind = false;
-      if (accessKeyData && !accessKeyData.lastFoundDate) {
-        isFirstFind = true;
-      }
-
       let canFindWallet = !hasReachedLimit;
 
-      if (!isFirstFind && accessKeyData?.lastFoundDate) {
+      if (accessKeyData?.lastFoundDate) {
           const now = Date.now();
           const lastFoundTime = accessKeyData.lastFoundDate.toMillis();
           const hoursSinceLastFind = (now - lastFoundTime) / (1000 * 60 * 60);
@@ -262,7 +256,7 @@ export default function DashboardPage() {
           }
           return [
             ...prevLogs,
-            getDummyLog(handleFoundWallet, canFindWallet, isFirstFind),
+            getDummyLog(handleFoundWallet, canFindWallet),
           ]
         });
       }, 2000);
