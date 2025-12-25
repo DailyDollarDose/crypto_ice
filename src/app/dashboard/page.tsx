@@ -15,6 +15,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AdBanner from '@/components/AdBanner';
+import AdBlockerDetector from '@/components/AdBlockerDetector';
 
 const coins = ['BTC', 'ETH', 'BNB', 'SOL', 'Multicoin'];
 const COOLDOWN_SECONDS = 2 * 60 * 60; // 2 hours
@@ -338,6 +339,7 @@ export default function DashboardPage() {
 
     return (
         <div className="bg-[#0A192F] min-h-screen text-gray-200 font-headline p-4 sm:p-6 lg:p-8 relative overflow-hidden">
+        <AdBlockerDetector />
         <ParticleAnimation />
         <div className="relative z-10 max-w-7xl mx-auto">
             <header className="flex justify-between items-center mb-8">
