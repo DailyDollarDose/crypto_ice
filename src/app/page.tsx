@@ -141,7 +141,7 @@ export default function Home() {
           Welcome to the
         </h1>
         <h1 className="text-4xl md:text-5xl font-bold tracking-[0.15em] uppercase text-accent mb-8 font-headline animate-fade-in-up delay-200">
-          Crypto Ice!
+          Crypto Ice Beta!
         </h1>
 
         <p className="text-lg text-muted-foreground mb-10 tracking-wider">

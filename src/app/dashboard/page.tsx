@@ -342,7 +342,7 @@ export default function DashboardPage() {
         <div className="relative z-10 max-w-7xl mx-auto">
             <header className="flex justify-between items-center mb-8">
             <Link href="/" className="text-2xl font-bold text-white tracking-wider">
-                Crypto Ice
+                Crypto Ice Beta
             </Link>
             <nav className="hidden md:flex items-center space-x-2">
                 {navItems.map(item => (
