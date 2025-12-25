@@ -24,6 +24,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
+      <head>
+        <script async defer type="text/javascript" src="https://pl25926239.effectivegatecpm.com/d2/20/43/d22043fbad386d7312181659070a47e0.js"></script>
+      </head>
       <body
         className={`${orbitron.variable} font-body antialiased`}
         suppressHydrationWarning
@@ -33,7 +36,6 @@ export default function RootLayout({
           {children}
         </FirebaseClientProvider>
         <Toaster />
-        <script type="text/javascript" src="https://pl25926239.effectivegatecpm.com/d2/20/43/d22043fbad386d7312181659070a47e0.js"></script>
       </body>
     </html>
   );
