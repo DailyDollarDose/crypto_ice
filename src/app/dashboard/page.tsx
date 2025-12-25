@@ -10,13 +10,14 @@ import ParticleAnimation from '@/components/particle-animation';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
-import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp, Timestamp, increment } from 'firebase/firestore';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AdBanner from '@/components/AdBanner';
 
 const coins = ['BTC', 'ETH', 'BNB', 'SOL', 'Multicoin'];
+const COOLDOWN_SECONDS = 2 * 60 * 60; // 2 hours
 
 type FoundWallet = {
     address: string;
@@ -34,6 +35,7 @@ type AccessKeyData = {
     totalReward: number;
     lastFoundDate?: Timestamp;
     limitResetDate?: Timestamp;
+    searchTime: number;
 };
 
 export default function DashboardPage() {
@@ -51,6 +53,7 @@ export default function DashboardPage() {
     const firestore = useFirestore();
     const [accessKeyData, setAccessKeyData] = useState<AccessKeyData | null>(null);
     const [accessKeyDocId, setAccessKeyDocId] = useState<string | null>(null);
+    const searchStartTimeRef = useRef<number | null>(null);
 
     const generateWalletAddress = () => {
         const chars = '0123456789abcdef';
@@ -164,13 +167,31 @@ export default function DashboardPage() {
                 const keyDoc = querySnapshot.docs[0];
                 setAccessKeyDocId(keyDoc.id);
                 const data = keyDoc.data() as Omit<AccessKeyData, 'id'>;
-                const completeData: AccessKeyData = { id: keyDoc.id, ...data };
+                const completeData: AccessKeyData = { id: keyDoc.id, searchTime: 0, ...data };
                 setAccessKeyData(completeData);
             }
         };
 
         fetchAccessKeyData();
     }, [loginKey, firestore]);
+
+    const updateSearchTime = async (isUnmounting = false) => {
+        if (searchStartTimeRef.current && accessKeyDocId && firestore) {
+            const endTime = Date.now();
+            const durationInSeconds = Math.floor((endTime - searchStartTimeRef.current) / 1000);
+            
+            if (durationInSeconds > 0) {
+                const keyDocRef = doc(firestore, 'accessKeys', accessKeyDocId);
+                await updateDoc(keyDocRef, {
+                    searchTime: increment(durationInSeconds)
+                });
+                if (!isUnmounting) {
+                    setAccessKeyData(prev => prev ? { ...prev, searchTime: prev.searchTime + durationInSeconds } : null);
+                }
+            }
+        }
+        searchStartTimeRef.current = null;
+    };
 
     const handleFoundWallet = async () => {
         if (!loginKey || !accessKeyData || !accessKeyDocId || !firestore) return;
@@ -187,10 +208,11 @@ export default function DashboardPage() {
         const keyDocRef = doc(firestore, 'accessKeys', accessKeyDocId);
         await updateDoc(keyDocRef, {
             totalReward: newTotalReward,
-            lastFoundDate: serverTimestamp()
+            lastFoundDate: serverTimestamp(),
+            searchTime: 0 // Reset search time on find
         });
 
-        setAccessKeyData(prev => prev ? { ...prev, totalReward: newTotalReward, lastFoundDate: new Timestamp(Math.floor(Date.now()/1000), 0) } : null);
+        setAccessKeyData(prev => prev ? { ...prev, totalReward: newTotalReward, lastFoundDate: new Timestamp(Math.floor(Date.now()/1000), 0), searchTime: 0 } : null);
 
         const asset = Math.random() > 0.5 ? 'BTC' : 'ETH';
         const btcPrice = 60000;
@@ -216,20 +238,40 @@ export default function DashboardPage() {
 
     const startSearch = () => {
         setIsSearching(true);
+        searchStartTimeRef.current = Date.now();
         setLogs(prev => [...prev, {text: 'Starting search...', color: 'text-green-400'}]);
     };
 
     const stopSearch = () => {
         setIsSearching(false);
+        updateSearchTime();
         setLogs(prev => [...prev, {text: 'Search stopped.', color: 'text-red-400'}]);
     };
+    
+    // Effect to handle cleanup when the component unmounts or browser is closed
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            if (isSearching) {
+                updateSearchTime(true);
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+            if (isSearching) {
+                updateSearchTime(true);
+            }
+        };
+    }, [isSearching, accessKeyDocId, firestore]);
 
     useEffect(() => {
         let interval: NodeJS.Timeout;
         if(isSearching) {
-        interval = setInterval(() => {
-            setCheckedCount(prev => prev + Math.floor(Math.random() * 5));
-        }, 1500);
+            interval = setInterval(() => {
+                setCheckedCount(prev => prev + Math.floor(Math.random() * 5));
+            }, 1500);
         }
         return () => clearInterval(interval);
     }, [isSearching]);
@@ -238,15 +280,13 @@ export default function DashboardPage() {
         let logInterval: NodeJS.Timeout;
         if (isSearching) {
             const hasReachedLimit = accessKeyData ? accessKeyData.totalReward >= accessKeyData.rewardLimit : false;
+            
             let canFindWallet = !hasReachedLimit;
 
             if (canFindWallet && accessKeyData?.lastFoundDate && foundWallets.length > 0) {
-                const now = Date.now();
-                const lastFoundTime = accessKeyData.lastFoundDate.toMillis();
-                const hoursSinceLastFind = (now - lastFoundTime) / (1000 * 60 * 60);
-                if (hoursSinceLastFind < 2) { // 2 hour cooldown
+                 if (accessKeyData.searchTime < COOLDOWN_SECONDS) {
                     canFindWallet = false;
-                }
+                 }
             }
 
 

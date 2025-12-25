@@ -87,6 +87,10 @@ export default function Home() {
         updates.lastFoundDate = null;
       }
 
+      if (keyData.searchTime === undefined) {
+        updates.searchTime = 0;
+      }
+
       if (Object.keys(updates).length > 0) {
           await updateDoc(keyDocRef, updates).catch(error => {
             const contextualError = new FirestorePermissionError({
