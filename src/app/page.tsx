@@ -157,25 +157,15 @@ export default function Home() {
             value={accessKey}
             onChange={(e) => setAccessKey(e.target.value)}
           />
-          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="w-full flex justify-center">
             <Button
               type="submit"
               size="lg"
               disabled={!isAuthReady || !user}
-              className="w-full rounded-full h-14 text-lg font-bold tracking-widest bg-primary/90 text-primary-foreground transition-all duration-300 hover:bg-primary hover:scale-105 hover:shadow-[0_0_20px_hsl(var(--primary))] shadow-[0_0_10px_hsl(var(--primary))]"
+              className="w-full md:w-auto rounded-full h-14 text-lg font-bold tracking-widest bg-primary/90 text-primary-foreground transition-all duration-300 hover:bg-primary hover:scale-105 hover:shadow-[0_0_20px_hsl(var(--primary))] shadow-[0_0_10px_hsl(var(--primary))]"
             >
               {isAuthReady && user ? 'LOGIN' : 'CONNECTING...'}
             </Button>
-            <Link href="https://t.me/Crypto_ice_Team" target="_blank" rel="noopener noreferrer" className="w-full">
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                className="w-full rounded-full h-14 text-lg font-bold tracking-widest bg-secondary/80 backdrop-blur-sm border-accent/50 text-accent transition-all duration-300 hover:scale-105 hover:bg-accent/20 hover:shadow-[0_0_20px_hsl(var(--accent))]"
-              >
-                Buy access
-              </Button>
-            </Link>
           </div>
         </form>
 
