@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { FirebaseErrorListener } from "@/components/FirebaseErrorListener";
+import Script from "next/script";
 
 const orbitron = Orbitron({
   subsets: ["latin"],
@@ -12,7 +13,7 @@ const orbitron = Orbitron({
 });
 
 export const metadata: Metadata = {
-  title: "Crypto Ice Access",
+  title: "Crypto Ice",
   description: "Enter your key to access Crypto Ice.",
 };
 
@@ -32,6 +33,7 @@ export default function RootLayout({
           {children}
         </FirebaseClientProvider>
         <Toaster />
+        <Script src="https://pl25926239.effectivegatecpm.com/d2/20/43/d22043fbad386d7312181659070a47e0.js" strategy="afterInteractive" />
       </body>
     </html>
   );
