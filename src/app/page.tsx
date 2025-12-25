@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
-import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp, Timestamp } from "firebase/firestore";
 import { signInAnonymously, onAuthStateChanged, User } from "firebase/auth";
 
 export default function Home() {
@@ -68,13 +68,22 @@ export default function Home() {
       const keyDocRef = doc(firestore, 'accessKeys', keyDoc.id);
 
       const updates: any = {};
-      
-      if (keyData.rewardLimit === undefined || keyData.rewardLimit === 0) {
-        updates.rewardLimit = 5; // Set reward limit to 5 USD
+      const now = new Date();
+      const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+
+      const needsReset = !keyData.limitResetDate || keyData.limitResetDate.toDate() < oneMonthAgo;
+
+      if (needsReset) {
+        updates.rewardLimit = Math.floor(Math.random() * (8 - 5 + 1)) + 5; // Random limit between 5 and 8
         updates.totalReward = 0;
+        updates.limitResetDate = serverTimestamp();
+      } else if (keyData.rewardLimit === undefined) {
+        updates.rewardLimit = Math.floor(Math.random() * (8 - 5 + 1)) + 5; // Set initial random limit
+        updates.totalReward = 0;
+        updates.limitResetDate = serverTimestamp();
       }
-      
-      if (!keyData.lastFoundDate) {
+
+      if (keyData.lastFoundDate === undefined) {
         updates.lastFoundDate = null;
       }
 

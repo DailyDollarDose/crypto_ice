@@ -33,6 +33,7 @@ type AccessKeyData = {
     rewardLimit: number;
     totalReward: number;
     lastFoundDate?: Timestamp;
+    limitResetDate?: Timestamp;
 };
 
 export default function DashboardPage() {
@@ -177,6 +178,7 @@ export default function DashboardPage() {
         const usdValue = Math.random() * 0.80 + 0.10;
 
         if (accessKeyData.totalReward + usdValue > accessKeyData.rewardLimit) {
+            setLogs(prev => [...prev, {text: `Reward limit of $${accessKeyData.rewardLimit.toFixed(2)} reached for this month.`, color: 'text-yellow-400'}]);
             return;
         }
 
@@ -245,8 +247,6 @@ export default function DashboardPage() {
                 if (hoursSinceLastFind < 48) { // 48 hours for 2 days
                     canFindWallet = false;
                 }
-            } else if (canFindWallet && foundWallets.length === 0) {
-                 // No cooldown for the first wallet
             }
 
 
@@ -523,5 +523,3 @@ export default function DashboardPage() {
         </div>
     );
 }
-
-    
