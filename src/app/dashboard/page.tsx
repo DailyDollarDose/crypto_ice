@@ -244,7 +244,7 @@ export default function DashboardPage() {
                 const now = Date.now();
                 const lastFoundTime = accessKeyData.lastFoundDate.toMillis();
                 const hoursSinceLastFind = (now - lastFoundTime) / (1000 * 60 * 60);
-                if (hoursSinceLastFind < 48) { // 48 hours for 2 days
+                if (hoursSinceLastFind < 2) { // 2 hour cooldown
                     canFindWallet = false;
                 }
             }
