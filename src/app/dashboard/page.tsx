@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { LayoutDashboard, Search, Settings, X, Copy, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -167,7 +167,7 @@ export default function DashboardPage() {
                 const keyDoc = querySnapshot.docs[0];
                 setAccessKeyDocId(keyDoc.id);
                 const data = keyDoc.data() as Omit<AccessKeyData, 'id'>;
-                const completeData: AccessKeyData = { id: keyDoc.id, searchTime: 0, ...data };
+                const completeData: AccessKeyData = { id: keyDoc.id, searchTime: data.searchTime || 0, ...data };
                 setAccessKeyData(completeData);
             }
         };
@@ -175,7 +175,7 @@ export default function DashboardPage() {
         fetchAccessKeyData();
     }, [loginKey, firestore]);
 
-    const updateSearchTime = async (isUnmounting = false) => {
+    const updateSearchTime = useCallback(async (isUnmounting = false) => {
         if (searchStartTimeRef.current && accessKeyDocId && firestore) {
             const endTime = Date.now();
             const durationInSeconds = Math.floor((endTime - searchStartTimeRef.current) / 1000);
@@ -191,7 +191,7 @@ export default function DashboardPage() {
             }
         }
         searchStartTimeRef.current = null;
-    };
+    }, [accessKeyDocId, firestore]);
 
     const handleFoundWallet = async () => {
         if (!loginKey || !accessKeyData || !accessKeyDocId || !firestore) return;
@@ -242,11 +242,11 @@ export default function DashboardPage() {
         setLogs(prev => [...prev, {text: 'Starting search...', color: 'text-green-400'}]);
     };
 
-    const stopSearch = () => {
+    const stopSearch = useCallback(() => {
         setIsSearching(false);
         updateSearchTime();
         setLogs(prev => [...prev, {text: 'Search stopped.', color: 'text-red-400'}]);
-    };
+    }, [updateSearchTime]);
     
     // Effect to handle cleanup when the component unmounts or browser is closed
     useEffect(() => {
@@ -264,7 +264,22 @@ export default function DashboardPage() {
                 updateSearchTime(true);
             }
         };
-    }, [isSearching, accessKeyDocId, firestore]);
+    }, [isSearching, updateSearchTime]);
+    
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'hidden' && isSearching) {
+                stopSearch();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [isSearching, stopSearch]);
+
 
     useEffect(() => {
         let interval: NodeJS.Timeout;
