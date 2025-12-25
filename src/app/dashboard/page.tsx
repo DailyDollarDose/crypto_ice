@@ -455,6 +455,9 @@ export default function DashboardPage() {
                     </Link>
                 </>
                 )}
+                 <div className='mt-4 w-full'>
+                    <AdBanner />
+                </div>
             </div>
             </div>
         )}
@@ -520,3 +523,5 @@ export default function DashboardPage() {
         </div>
     );
 }
+
+    
