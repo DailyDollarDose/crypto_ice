@@ -18,21 +18,10 @@ export default function Home() {
   const { toast } = useToast();
   const auth = useAuth();
   const firestore = useFirestore();
-  const [deviceId, setDeviceId] = useState<string | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    let did;
-    if (typeof window !== 'undefined') {
-        did = localStorage.getItem('deviceId');
-        if (!did) {
-            did = crypto.randomUUID();
-            localStorage.setItem('deviceId', did);
-        }
-        setDeviceId(did);
-    }
-
     if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, (user) => {
         setUser(user);
@@ -44,7 +33,7 @@ export default function Home() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth?.currentUser || !firestore || !deviceId) {
+    if (!auth?.currentUser || !firestore) {
        toast({
         title: "Services not ready",
         description: "Please wait a moment and try again.",
@@ -78,20 +67,8 @@ export default function Home() {
       const keyData = keyDoc.data();
       const keyDocRef = doc(firestore, 'accessKeys', keyDoc.id);
 
-      if (keyData.deviceId && keyData.deviceId !== deviceId) {
-        toast({
-          title: "Access Denied",
-          description: "This key is already registered to another device.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
       const updates: any = {};
-      if (!keyData.deviceId) {
-          updates.deviceId = deviceId;
-      }
-
+      
       if (keyData.rewardLimit === undefined || keyData.rewardLimit === 0) {
         updates.rewardLimit = 5; // Set reward limit to 5 USD
         updates.totalReward = 0;
@@ -100,7 +77,6 @@ export default function Home() {
       if (!keyData.lastFoundDate) {
         updates.lastFoundDate = null;
       }
-
 
       if (Object.keys(updates).length > 0) {
           await updateDoc(keyDocRef, updates).catch(error => {

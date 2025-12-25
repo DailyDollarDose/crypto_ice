@@ -29,7 +29,6 @@ type AccessKeyData = {
     id: string;
     key: string;
     isValid: boolean;
-    deviceId: string;
     rewardLimit: number;
     totalReward: number;
     lastFoundDate?: Timestamp;
