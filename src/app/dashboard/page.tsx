@@ -14,6 +14,7 @@ import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp, Tim
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import AdBanner from '@/components/AdBanner';
 
 const coins = ['BTC', 'ETH', 'BNB', 'SOL', 'Multicoin'];
 
@@ -286,7 +287,7 @@ export default function DashboardPage() {
         <div className="relative z-10 max-w-7xl mx-auto">
             <header className="flex justify-between items-center mb-8">
             <Link href="/" className="text-2xl font-bold text-white tracking-wider">
-                Crypto ICE
+                Crypto Ice
             </Link>
             <nav className="hidden md:flex items-center space-x-2">
                 {navItems.map(item => (
@@ -323,6 +324,8 @@ export default function DashboardPage() {
                 ))}
                 </div>
             </section>
+
+            <AdBanner />
 
             <section id="stats" className="mb-8 text-center">
                 <div className="bg-black/20 backdrop-blur-md border border-purple-500/30 rounded-2xl p-4 inline-block shadow-lg">
@@ -367,7 +370,7 @@ export default function DashboardPage() {
             <p>
                 <strong>Rules:</strong> Only one account per user is allowed. Use of bots, scripts, or any form of automation is strictly prohibited and will result in a permanent ban. All transactions are final. We are not responsible for any lost keys or funds.
             </p>
-            <p>&copy; {currentYear} Crypto ICE. All rights reserved.</p>
+            <p>&copy; {currentYear} Crypto Ice. All rights reserved.</p>
             </footer>
         </div>
 
