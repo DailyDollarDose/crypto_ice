@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { LayoutDashboard, Search, Settings, X, Copy, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, Search, Settings, X, Copy, Sun, Moon, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -362,11 +362,17 @@ export default function DashboardPage() {
                 </div>
             </section>
 
-            <section id="stats" className="mb-8 text-center">
+            <section id="stats" className="mb-8 flex flex-col sm:flex-row items-center justify-center gap-4 text-center">
                 <div className="bg-black/20 backdrop-blur-md border border-purple-500/30 rounded-2xl p-4 inline-block shadow-lg">
-                <p className="text-xl font-bold tracking-widest text-purple-300">
-                    Checked: <span className="text-white">{checkedCount.toLocaleString()}</span>
-                </p>
+                    <p className="text-xl font-bold tracking-widest text-purple-300">
+                        Checked: <span className="text-white">{checkedCount.toLocaleString()}</span>
+                    </p>
+                </div>
+                <div className="bg-black/20 backdrop-blur-md border border-green-500/30 rounded-2xl p-4 inline-block shadow-lg">
+                    <p className="text-xl font-bold tracking-widest text-green-300 flex items-center gap-2">
+                        <DollarSign className="w-6 h-6" />
+                        Total Found: <span className="text-white">${totalFoundValue.toFixed(2)}</span>
+                    </p>
                 </div>
             </section>
 
