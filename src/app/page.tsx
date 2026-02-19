@@ -70,7 +70,7 @@ export default function Home() {
                 totalReward: 0,
                 lastFoundDate: null,
                 searchTime: 0,
-                iceCoins: 0,
+                frostBytes: 0,
             };
 
             await setDoc(newKeyDocRef, newKeyData).catch(error => {
@@ -127,8 +127,8 @@ export default function Home() {
         updates.searchTime = 0;
       }
       
-      if (keyData.iceCoins === undefined) {
-        updates.iceCoins = 0;
+      if (keyData.frostBytes === undefined) {
+        updates.frostBytes = 0;
       }
 
       if (Object.keys(updates).length > 0) {

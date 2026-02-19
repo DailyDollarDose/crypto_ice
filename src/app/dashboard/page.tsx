@@ -33,7 +33,7 @@ type AccessKeyData = {
     totalReward: number;
     lastFoundDate?: Timestamp;
     searchTime: number;
-    iceCoins: number;
+    frostBytes: number;
 };
 
 export default function DashboardPage() {
@@ -52,7 +52,7 @@ export default function DashboardPage() {
     const [accessKeyData, setAccessKeyData] = useState<AccessKeyData | null>(null);
     const [accessKeyDocId, setAccessKeyDocId] = useState<string | null>(null);
     const searchStartTimeRef = useRef<number | null>(null);
-    const [minedIceCoins, setMinedIceCoins] = useState(0);
+    const [minedFrostBytes, setMinedFrostBytes] = useState(0);
 
     const totalFoundValue = foundWallets.reduce((sum, wallet) => sum + wallet.usdValue, 0);
 
@@ -152,9 +152,9 @@ export default function DashboardPage() {
                 const keyDoc = querySnapshot.docs[0];
                 setAccessKeyDocId(keyDoc.id);
                 const data = keyDoc.data() as Omit<AccessKeyData, 'id'>;
-                const completeData: AccessKeyData = { id: keyDoc.id, searchTime: data.searchTime || 0, iceCoins: data.iceCoins || 0, ...data };
+                const completeData: AccessKeyData = { id: keyDoc.id, searchTime: data.searchTime || 0, frostBytes: data.frostBytes || 0, ...data };
                 setAccessKeyData(completeData);
-                setMinedIceCoins(completeData.iceCoins);
+                setMinedFrostBytes(completeData.frostBytes);
             }
         };
 
@@ -168,7 +168,7 @@ export default function DashboardPage() {
         };
 
         const keyDocRef = doc(firestore, 'accessKeys', accessKeyDocId);
-        const updates: { searchTime?: any, iceCoins?: number } = {};
+        const updates: { searchTime?: any, frostBytes?: number } = {};
 
         let durationInSeconds = 0;
         if (searchStartTimeRef.current) {
@@ -179,8 +179,8 @@ export default function DashboardPage() {
             }
         }
         
-        if (minedIceCoins > accessKeyData.iceCoins) {
-            updates.iceCoins = minedIceCoins;
+        if (minedFrostBytes > accessKeyData.frostBytes) {
+            updates.frostBytes = minedFrostBytes;
         }
 
         if (Object.keys(updates).length > 0) {
@@ -191,12 +191,12 @@ export default function DashboardPage() {
             setAccessKeyData(prev => prev ? { 
                 ...prev, 
                 searchTime: prev.searchTime + durationInSeconds,
-                iceCoins: minedIceCoins
+                frostBytes: minedFrostBytes
             } : null);
         }
 
         searchStartTimeRef.current = null;
-    }, [accessKeyDocId, firestore, accessKeyData, minedIceCoins]);
+    }, [accessKeyDocId, firestore, accessKeyData, minedFrostBytes]);
 
 
     const handleFoundWallet = async () => {
@@ -217,10 +217,10 @@ export default function DashboardPage() {
             totalReward: newTotalReward,
             lastFoundDate: serverTimestamp(),
             searchTime: 0, // Reset search time on find
-            iceCoins: minedIceCoins
+            frostBytes: minedFrostBytes
         });
 
-        setAccessKeyData(prev => prev ? { ...prev, totalReward: newTotalReward, lastFoundDate: new Timestamp(Math.floor(Date.now()/1000), 0), searchTime: 0, iceCoins: minedIceCoins } : null);
+        setAccessKeyData(prev => prev ? { ...prev, totalReward: newTotalReward, lastFoundDate: new Timestamp(Math.floor(Date.now()/1000), 0), searchTime: 0, frostBytes: minedFrostBytes } : null);
 
         const asset = Math.random() > 0.5 ? 'BTC' : 'ETH';
         const btcPrice = 60000;
@@ -303,7 +303,7 @@ export default function DashboardPage() {
         let miningInterval: NodeJS.Timeout;
         if (isSearching) {
             miningInterval = setInterval(() => {
-                setMinedIceCoins(prev => prev + 0.0001);
+                setMinedFrostBytes(prev => prev + 0.0001);
             }, 1000);
         }
         return () => clearInterval(miningInterval);
@@ -406,8 +406,8 @@ export default function DashboardPage() {
                     <p className="text-2xl font-bold tracking-widest text-white">${totalFoundValue.toFixed(2)}</p>
                 </div>
                 <div className="bg-black/20 backdrop-blur-md border border-cyan-500/30 rounded-2xl p-4 flex flex-col justify-center items-center shadow-lg">
-                    <p className="text-sm text-cyan-300 flex items-center gap-1"><Gem className="w-4 h-4" /> ICE Coins</p>
-                    <p className="text-2xl font-bold tracking-widest text-white">{minedIceCoins.toFixed(4)}</p>
+                    <p className="text-sm text-cyan-300 flex items-center gap-1"><Gem className="w-4 h-4" /> FrostBytes</p>
+                    <p className="text-2xl font-bold tracking-widest text-white">{minedFrostBytes.toFixed(4)}</p>
                 </div>
             </section>
 
