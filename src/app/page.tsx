@@ -1,4 +1,3 @@
-
 'use client';
 
 import ParticleAnimation from "@/components/particle-animation";
@@ -9,8 +8,9 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
-import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp, Timestamp } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { signInAnonymously, onAuthStateChanged, User } from "firebase/auth";
+import keysData from '../../docs/generated-keys.json';
 
 export default function Home() {
   const router = useRouter();
@@ -45,7 +45,7 @@ export default function Home() {
     try {
       const accessKeysRef = collection(firestore, 'accessKeys');
       const q = query(accessKeysRef, where("key", "==", accessKey));
-      const querySnapshot = await getDocs(q).catch(error => {
+      let querySnapshot = await getDocs(q).catch(error => {
         const contextualError = new FirestorePermissionError({
           path: `accessKeys`,
           operation: 'list',
@@ -55,6 +55,50 @@ export default function Home() {
       });
       
       if (querySnapshot.empty) {
+        // Key not found in Firestore. Check if it's a valid, unused key.
+        const validKeys = (keysData as { keys: string[] }).keys;
+        if (validKeys.includes(accessKey)) {
+          // It's a valid key from our generated list. Let's add it to Firestore.
+          try {
+            const newKeyDocRef = doc(collection(firestore, 'accessKeys')); // Creates a ref with a new ID
+            const newKeyData = {
+                id: newKeyDocRef.id, // Use the new doc ID as the 'id' field
+                key: accessKey,
+                isValid: true,
+                purchaseDate: new Date().toISOString(),
+                rewardLimit: Math.floor(Math.random() * (8 - 5 + 1)) + 5,
+                totalReward: 0,
+                limitResetDate: serverTimestamp(),
+                lastFoundDate: null,
+                searchTime: 0,
+            };
+
+            await setDoc(newKeyDocRef, newKeyData).catch(error => {
+                const contextualError = new FirestorePermissionError({
+                    path: newKeyDocRef.path,
+                    operation: 'create',
+                    requestResourceData: newKeyData,
+                });
+                errorEmitter.emit('permission-error', contextualError);
+                throw contextualError;
+            });
+            
+            // Now that it's created, re-query to proceed with login logic
+            querySnapshot = await getDocs(query(accessKeysRef, where("key", "==", accessKey)));
+
+          } catch (error) {
+             console.error("Error creating new access key in Firestore:", error);
+             toast({
+                title: "Setup Error",
+                description: "Could not activate your access key. Please try again.",
+                variant: "destructive",
+            });
+            return;
+          }
+        }
+      }
+
+      if (querySnapshot.empty) {
         toast({
           title: "Access Denied",
           description: "Invalid access key.",
@@ -62,6 +106,7 @@ export default function Home() {
         });
         return;
       }
+
 
       const keyDoc = querySnapshot.docs[0];
       const keyData = keyDoc.data();
