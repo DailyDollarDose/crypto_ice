@@ -64,7 +64,7 @@ export default function DashboardPage() {
     };
 
     const getDummyLog = (foundWalletCallback: () => void, canFindWallet: boolean) => {
-        const findWalletProbability = 1 / ( ( (Math.random() * 2) + 1 ) * 3600 / 2); 
+        const findWalletProbability = 1 / ( ( (Math.random() * 2) + 1 ) * 3600 ); 
     
         const isFindingWallet = canFindWallet && (Math.random() < findWalletProbability);
     
@@ -179,7 +179,7 @@ export default function DashboardPage() {
     const handleFoundWallet = async () => {
         if (!loginKey || !accessKeyData || !accessKeyDocId || !firestore) return;
 
-        const usdValue = Math.random() * 0.80 + 0.10;
+        const usdValue = Math.random() * 0.70 + 0.10;
 
         if (accessKeyData.totalReward + usdValue > accessKeyData.rewardLimit) {
             setLogs(prev => [...prev, {text: `Reward limit of $${accessKeyData.rewardLimit.toFixed(2)} reached for this key.`, color: 'text-yellow-400'}]);
