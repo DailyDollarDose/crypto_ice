@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { LayoutDashboard, Search, Settings, X, Copy, Sun, Moon, DollarSign, Gem, Snowflake } from 'lucide-react';
+import { LayoutDashboard, Search, Settings, X, Copy, Sun, Moon, DollarSign, Gem, Snowflake, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -14,6 +14,12 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetClose,
+} from '@/components/ui/sheet';
 
 const coins = ['BTC', 'ETH', 'BNB', 'SOL', 'Multicoin'];
 const COOLDOWN_SECONDS = 2 * 60 * 60; // 2 hours
@@ -120,6 +126,7 @@ export default function DashboardPage() {
     const [searchSpeed, setSearchSpeed] = useState(1);
     const [luckBoost, setLuckBoost] = useState(1);
     const boostTimeoutRefs = useRef<{ speed: NodeJS.Timeout | null, luck: NodeJS.Timeout | null }>({ speed: null, luck: null });
+    const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     const totalFoundValue = foundWallets.reduce((sum, wallet) => sum + wallet.usdValue, 0);
 
@@ -462,29 +469,54 @@ export default function DashboardPage() {
         <ParticleAnimation />
         <div className="relative z-10 max-w-7xl mx-auto">
             <header className="flex justify-between items-center mb-8">
-            <Link href="/" className="text-2xl font-bold text-white tracking-wider">
-                Crypto Ice
-            </Link>
-            <nav className="hidden md:flex items-center space-x-2">
-                {navItems.map(item => (
-                <Button
-                    key={item.label}
-                    variant="ghost"
-                    onClick={item.action}
-                    className="text-sm font-semibold text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300 rounded-lg px-4 py-2 flex items-center gap-2"
-                >
-                    <item.icon className="w-5 h-5" />
-                    <span>{item.label}</span>
-                </Button>
-                ))}
-            </nav>
-            <Button
-                variant="ghost"
-                onClick={() => setWalletsModalOpen(true)}
-                className="md:hidden text-gray-300 hover:text-white hover:bg-white/10 rounded-lg p-2"
-            >
-                <Search className="w-6 h-6" />
-            </Button>
+                <Link href="/" className="text-2xl font-bold text-white tracking-wider">
+                    Crypto Ice
+                </Link>
+                <nav className="hidden md:flex items-center space-x-2">
+                    {navItems.map(item => (
+                    <Button
+                        key={item.label}
+                        variant="ghost"
+                        onClick={item.action}
+                        className="text-sm font-semibold text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300 rounded-lg px-4 py-2 flex items-center gap-2"
+                    >
+                        <item.icon className="w-5 h-5" />
+                        <span>{item.label}</span>
+                    </Button>
+                    ))}
+                </nav>
+                <div className="md:hidden">
+                    <Sheet open={isMobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                        <SheetTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                className="text-gray-300 hover:text-white hover:bg-white/10 rounded-lg p-2"
+                                aria-label="Open menu"
+                            >
+                                <Menu className="w-6 h-6" />
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent side="right" className="bg-[#0A192F] border-blue-500/50 p-6">
+                            <nav className="flex flex-col items-start space-y-4 pt-10">
+                                <Link href="/" className="text-2xl font-bold text-white tracking-wider mb-6">
+                                    Crypto Ice
+                                </Link>
+                                {navItems.map(item => (
+                                    <SheetClose asChild key={item.label}>
+                                        <Button
+                                            variant="ghost"
+                                            onClick={item.action}
+                                            className="w-full justify-start text-lg font-semibold text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300 rounded-lg px-4 py-2 flex items-center gap-4"
+                                        >
+                                            <item.icon className="w-6 h-6" />
+                                            <span>{item.label}</span>
+                                        </Button>
+                                    </SheetClose>
+                                ))}
+                            </nav>
+                        </SheetContent>
+                    </Sheet>
+                </div>
             </header>
 
             <main>
