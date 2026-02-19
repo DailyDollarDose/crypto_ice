@@ -8,8 +8,8 @@ import { cn } from '@/lib/utils';
 import ParticleAnimation from '@/components/particle-animation';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore } from '@/firebase';
-import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp, Timestamp, increment, setDoc } from 'firebase/firestore';
+import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp, Timestamp, increment } from 'firebase/firestore';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -18,6 +18,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 const coins = ['BTC', 'ETH', 'BNB', 'SOL', 'Multicoin'];
 const COOLDOWN_SECONDS = 2 * 60 * 60; // 2 hours
 const GLACIER_COST = 10;
+const FOUND_WALLETS_STORAGE_KEY = 'foundWallets';
 
 type FoundWallet = {
     address: string;
@@ -39,6 +40,7 @@ type AccessKeyData = {
 };
 
 const getDummyLog = (foundWalletCallback: () => void, canFindWallet: boolean, luckBoost: number) => {
+    // Average find time is ~8 hours of searching. (1 / (1.5 * 3600 * 2)) with a log every 2 seconds.
     const findWalletProbability = (1 / (((Math.random() * 2) + 1) * 3600 * 2)) * luckBoost;
 
     const isFindingWallet = canFindWallet && (Math.random() < findWalletProbability);
@@ -129,14 +131,23 @@ export default function DashboardPage() {
   
     useEffect(() => {
         setCurrentYear(new Date().getFullYear());
-    }, []);
-
-    useEffect(() => {
         const key = localStorage.getItem('userAccessKey');
         if (key) {
-        setLoginKey(key);
+            setLoginKey(key);
+            // Load found wallets from localStorage
+            const storedWallets = localStorage.getItem(FOUND_WALLETS_STORAGE_KEY);
+            if (storedWallets) {
+                setFoundWallets(JSON.parse(storedWallets));
+            }
         }
     }, []);
+
+    // Save found wallets to localStorage whenever they change
+    useEffect(() => {
+        if (foundWallets.length > 0) {
+            localStorage.setItem(FOUND_WALLETS_STORAGE_KEY, JSON.stringify(foundWallets));
+        }
+    }, [foundWallets]);
 
     useEffect(() => {
         if (!loginKey || !firestore) return;
@@ -191,7 +202,14 @@ export default function DashboardPage() {
         }
 
         if (Object.keys(updates).length > 0) {
-            await updateDoc(keyDocRef, updates);
+            await updateDoc(keyDocRef, updates).catch(error => {
+                const contextualError = new FirestorePermissionError({
+                    path: keyDocRef.path,
+                    operation: 'update',
+                    requestResourceData: updates,
+                });
+                errorEmitter.emit('permission-error', contextualError);
+            });
         }
 
         if (!isUnmounting) {
@@ -217,13 +235,21 @@ export default function DashboardPage() {
         }
 
         const newTotalReward = accessKeyData.totalReward + usdValue;
-
-        const keyDocRef = doc(firestore, 'accessKeys', accessKeyDocId);
-        await updateDoc(keyDocRef, {
+        const updates = {
             totalReward: newTotalReward,
             lastFoundDate: serverTimestamp(),
             searchTime: 0, // Reset search time on find
             frostBytes: minedFrostBytes
+        };
+
+        const keyDocRef = doc(firestore, 'accessKeys', accessKeyDocId);
+        updateDoc(keyDocRef, updates).catch(error => {
+            const contextualError = new FirestorePermissionError({
+                path: keyDocRef.path,
+                operation: 'update',
+                requestResourceData: updates,
+            });
+            errorEmitter.emit('permission-error', contextualError);
         });
 
         setAccessKeyData(prev => prev ? { ...prev, totalReward: newTotalReward, lastFoundDate: new Timestamp(Math.floor(Date.now()/1000), 0), searchTime: 0, frostBytes: minedFrostBytes } : null);
@@ -375,7 +401,6 @@ export default function DashboardPage() {
 
         const rand = Math.random() * 100;
         
-        // Clear existing timeouts if any
         if (boostTimeoutRefs.current.speed) clearTimeout(boostTimeoutRefs.current.speed);
         if (boostTimeoutRefs.current.luck) clearTimeout(boostTimeoutRefs.current.luck);
         setSearchSpeed(1);
@@ -414,14 +439,21 @@ export default function DashboardPage() {
             toast({ title: 'Glacier Thawed!', description: `JACKPOT! You found ${bonus} FrostBytes!` });
         }
 
-        // Update Firestore
-        const keyDocRef = doc(firestore, 'accessKeys', accessKeyDocId);
-        await updateDoc(keyDocRef, {
+        const updates = {
             frostBytes: finalFrostBytes,
             totalReward: newTotalReward,
+        };
+
+        const keyDocRef = doc(firestore, 'accessKeys', accessKeyDocId);
+        updateDoc(keyDocRef, updates).catch(error => {
+            const contextualError = new FirestorePermissionError({
+                path: keyDocRef.path,
+                operation: 'update',
+                requestResourceData: updates,
+            });
+            errorEmitter.emit('permission-error', contextualError);
         });
 
-        // Update local state after firestore update for consistency
         setAccessKeyData(prev => prev ? { ...prev, frostBytes: finalFrostBytes, totalReward: newTotalReward } : null);
     };
 

@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
-import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc, setDoc } from "firebase/firestore";
 import { signInAnonymously, onAuthStateChanged, User } from "firebase/auth";
 import keysData from '../../docs/generated-keys.json';
 
@@ -73,14 +73,13 @@ export default function Home() {
                 frostBytes: 0,
             };
 
-            await setDoc(newKeyDocRef, newKeyData).catch(error => {
+            setDoc(newKeyDocRef, newKeyData).catch(error => {
                 const contextualError = new FirestorePermissionError({
                     path: newKeyDocRef.path,
                     operation: 'create',
                     requestResourceData: newKeyData,
                 });
                 errorEmitter.emit('permission-error', contextualError);
-                throw contextualError;
             });
             
             // Now that it's created, re-query to proceed with login logic
@@ -132,14 +131,13 @@ export default function Home() {
       }
 
       if (Object.keys(updates).length > 0) {
-          await updateDoc(keyDocRef, updates).catch(error => {
+          updateDoc(keyDocRef, updates).catch(error => {
             const contextualError = new FirestorePermissionError({
                 path: keyDocRef.path,
                 operation: 'update',
                 requestResourceData: updates,
             });
             errorEmitter.emit('permission-error', contextualError);
-            throw contextualError;
           });
       }
 
