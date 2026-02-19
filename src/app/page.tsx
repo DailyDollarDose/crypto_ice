@@ -141,7 +141,7 @@ export default function Home() {
           Welcome to the
         </h1>
         <h1 className="text-4xl md:text-5xl font-bold tracking-[0.15em] uppercase text-accent mb-8 font-headline animate-fade-in-up delay-200">
-          Crypto Ice Beta!
+          Crypto Ice Beta
         </h1>
 
         <p className="text-lg text-muted-foreground mb-10 tracking-wider">
@@ -157,7 +157,7 @@ export default function Home() {
             value={accessKey}
             onChange={(e) => setAccessKey(e.target.value)}
           />
-          <div className="w-full flex justify-center">
+          <div className="w-full flex flex-col md:flex-row items-center justify-center gap-4">
             <Button
               type="submit"
               size="lg"
@@ -166,6 +166,21 @@ export default function Home() {
             >
               {isAuthReady && user ? 'LOGIN' : 'CONNECTING...'}
             </Button>
+            <Link
+              href="https://t.me/Crypto_ice_Team"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full md:w-auto"
+            >
+              <Button
+                type="button"
+                size="lg"
+                variant="outline"
+                className="w-full md:w-auto rounded-full h-14 text-lg font-bold tracking-widest border-accent text-accent transition-all duration-300 hover:bg-accent/10 hover:scale-105 hover:shadow-[0_0_20px_hsl(var(--accent))] shadow-[0_0_10px_hsl(var(--accent))]"
+              >
+                BUY KEY
+              </Button>
+            </Link>
           </div>
         </form>
 
