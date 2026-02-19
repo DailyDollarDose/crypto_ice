@@ -9,7 +9,7 @@ import ParticleAnimation from '@/components/particle-animation';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
-import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp, Timestamp, increment } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp, Timestamp, increment, setDoc } from 'firebase/firestore';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -181,6 +181,7 @@ export default function DashboardPage() {
 
         if (accessKeyData.totalReward + usdValue > accessKeyData.rewardLimit) {
             setLogs(prev => [...prev, {text: `Reward limit of $${accessKeyData.rewardLimit.toFixed(2)} reached for this key.`, color: 'text-yellow-400'}]);
+            setIsSearching(false); // Stop searching when limit is reached
             return;
         }
 
@@ -279,10 +280,8 @@ export default function DashboardPage() {
             
             let canFindWallet = !hasReachedLimit;
 
-            if (canFindWallet && accessKeyData?.lastFoundDate) {
-                 if (accessKeyData.searchTime < COOLDOWN_SECONDS) {
-                    canFindWallet = false;
-                 }
+            if (canFindWallet && accessKeyData?.lastFoundDate && accessKeyData.searchTime < COOLDOWN_SECONDS) {
+                 canFindWallet = false;
             }
 
 
@@ -464,6 +463,10 @@ export default function DashboardPage() {
                             onChange={(e) => setUserWithdrawAddress(e.target.value)}
                         />
                     </div>
+                    
+                    <p className="text-center text-yellow-400 font-semibold pt-2">
+                        Note: A minimum of $5.00 USD in found assets is required for withdrawal.
+                    </p>
 
                     <div className="pt-4">
                     <Link href="https://t.me/Crypto_ice_Team" target="_blank" rel="noopener noreferrer" className="w-full">
@@ -479,6 +482,9 @@ export default function DashboardPage() {
                 <>
                     <p className="text-gray-400 mb-8">
                     You haven’t found any wallets yet. Keep searching to find valuable assets.
+                    </p>
+                    <p className="text-center text-yellow-400 font-semibold mb-4">
+                        Note: A minimum of $5.00 USD in found assets is required for withdrawal.
                     </p>
                     <Link href="https://t.me/Crypto_ice_Team" target="_blank" rel="noopener noreferrer" className="w-full">
                         <Button
