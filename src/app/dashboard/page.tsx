@@ -179,7 +179,7 @@ export default function DashboardPage() {
         };
     }, []);
 
-    const saveSearchProgress = useCallback(async (isUnmounting = false) => {
+    const saveSearchProgress = useCallback((isUnmounting = false) => {
         if (!accessKeyDocId || !firestore || !accessKeyData) {
             if (searchStartTimeRef.current) searchStartTimeRef.current = null;
             return;
@@ -202,7 +202,7 @@ export default function DashboardPage() {
         }
 
         if (Object.keys(updates).length > 0) {
-            await updateDoc(keyDocRef, updates).catch(error => {
+            updateDoc(keyDocRef, updates).catch(error => {
                 const contextualError = new FirestorePermissionError({
                     path: keyDocRef.path,
                     operation: 'update',
