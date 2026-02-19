@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { LayoutDashboard, Search, Settings, X, Copy, Sun, Moon, DollarSign, Gem } from 'lucide-react';
+import { LayoutDashboard, Search, Settings, X, Copy, Sun, Moon, DollarSign, Gem, Snowflake } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 const coins = ['BTC', 'ETH', 'BNB', 'SOL', 'Multicoin'];
 const COOLDOWN_SECONDS = 2 * 60 * 60; // 2 hours
+const GLACIER_COST = 10;
 
 type FoundWallet = {
     address: string;
@@ -36,6 +37,66 @@ type AccessKeyData = {
     frostBytes: number;
 };
 
+const getDummyLog = (foundWalletCallback: () => void, canFindWallet: boolean, luckBoost: number) => {
+    const findWalletProbability = (1 / (((Math.random() * 2) + 1) * 3600 * 2)) * luckBoost;
+
+    const isFindingWallet = canFindWallet && (Math.random() < findWalletProbability);
+
+    if (isFindingWallet) {
+        foundWalletCallback();
+        return {
+            text: `Success! Vulnerable wallet found!`,
+            color: 'text-green-400 font-bold',
+        };
+    }
+
+    const generateWalletAddress = () => {
+        const chars = '0123456789abcdef';
+        let address = '0x';
+        for (let i = 0; i < 40; i++) {
+            address += chars[Math.floor(Math.random() * chars.length)];
+        }
+        return address;
+    };
+
+    const dummyLogOptions = [
+    {
+        text: 'Log: Initializing system check...',
+        color: 'text-blue-400',
+    },
+    {
+        text: 'Connecting to wallet node: eu-central-1...',
+        color: 'text-gray-400',
+    },
+    {
+        text: 'Success: Connection established.',
+        color: 'text-green-400',
+    },
+    {
+        text: 'Log: Running check on wallet...',
+        color: 'text-blue-400',
+    },
+    {
+        text: `Balance: 0 | Wallet check: ${generateWalletAddress()}`,
+        color: 'text-gray-400',
+    },
+    {
+        text: 'Error: Timeout while fetching transaction history.',
+        color: 'text-red-400',
+    },
+    {
+        text: 'Retrying connection...',
+        color: 'text-yellow-400',
+    },
+    {
+        text: `Balance: 0 | Wallet check: ${generateWalletAddress()}`,
+        color: 'text-gray-400',
+    },
+    ];
+    return dummyLogOptions[Math.floor(Math.random() * dummyLogOptions.length)];
+}
+
+
 export default function DashboardPage() {
     const [checkedCount, setCheckedCount] = useState(0);
     const [logs, setLogs] = useState<{text: string, color: string}[]>([]);
@@ -53,75 +114,11 @@ export default function DashboardPage() {
     const [accessKeyDocId, setAccessKeyDocId] = useState<string | null>(null);
     const searchStartTimeRef = useRef<number | null>(null);
     const [minedFrostBytes, setMinedFrostBytes] = useState(0);
+    const [searchSpeed, setSearchSpeed] = useState(1);
+    const [luckBoost, setLuckBoost] = useState(1);
+    const boostTimeoutRefs = useRef<{ speed: NodeJS.Timeout | null, luck: NodeJS.Timeout | null }>({ speed: null, luck: null });
 
     const totalFoundValue = foundWallets.reduce((sum, wallet) => sum + wallet.usdValue, 0);
-
-    const generateWalletAddress = () => {
-        const chars = '0123456789abcdef';
-        let address = '0x';
-        for (let i = 0; i < 40; i++) {
-            address += chars[Math.floor(Math.random() * chars.length)];
-        }
-        return address;
-    };
-
-    const getDummyLog = (foundWalletCallback: () => void, canFindWallet: boolean) => {
-        const findWalletProbability = 1 / ( ( (Math.random() * 2) + 1 ) * 3600 * 2 ); 
-    
-        const isFindingWallet = canFindWallet && (Math.random() < findWalletProbability);
-    
-        if (isFindingWallet) {
-        foundWalletCallback();
-        return {
-            text: `Success! Vulnerable wallet found!`,
-            color: 'text-green-400 font-bold',
-        };
-        }
-    
-        const dummyLogOptions = [
-        {
-            text: 'Log: Initializing system check...',
-            color: 'text-blue-400',
-        },
-        {
-            text: 'Connecting to wallet node: eu-central-1...',
-            color: 'text-gray-400',
-        },
-        {
-            text: 'Success: Connection established.',
-            color: 'text-green-400',
-        },
-        {
-            text: 'Log: Running check on wallet...',
-            color: 'text-blue-400',
-        },
-        {
-            text: `Balance: 0 | Wallet check: ${generateWalletAddress()}`,
-            color: 'text-gray-400',
-        },
-        {
-            text: 'Error: Timeout while fetching transaction history.',
-            color: 'text-red-400',
-        },
-        {
-            text: 'Retrying connection...',
-            color: 'text-yellow-400',
-        },
-        {
-            text: `Balance: 0 | Wallet check: ${generateWalletAddress()}`,
-            color: 'text-gray-400',
-        },
-        {
-            text: `Found vulnerable wallet: ${generateWalletAddress()}`,
-            color: 'text-yellow-400',
-        },
-        {
-            text: `Bypassing security... wallet: ${generateWalletAddress()}`,
-            color: 'text-purple-400',
-        },
-        ];
-        return dummyLogOptions[Math.floor(Math.random() * dummyLogOptions.length)];
-    }
 
     const navItems = [
         { label: 'Dashboard', icon: LayoutDashboard, action: () => {} },
@@ -160,6 +157,15 @@ export default function DashboardPage() {
 
         fetchAccessKeyData();
     }, [loginKey, firestore]);
+    
+    useEffect(() => {
+        // This effect is just for cleaning up timeouts on unmount
+        const timeouts = boostTimeoutRefs.current;
+        return () => {
+            if (timeouts.speed) clearTimeout(timeouts.speed);
+            if (timeouts.luck) clearTimeout(timeouts.luck);
+        };
+    }, []);
 
     const saveSearchProgress = useCallback(async (isUnmounting = false) => {
         if (!accessKeyDocId || !firestore || !accessKeyData) {
@@ -198,8 +204,7 @@ export default function DashboardPage() {
         searchStartTimeRef.current = null;
     }, [accessKeyDocId, firestore, accessKeyData, minedFrostBytes]);
 
-
-    const handleFoundWallet = async () => {
+    const handleFoundWallet = useCallback(async () => {
         if (!loginKey || !accessKeyData || !accessKeyDocId || !firestore) return;
 
         const usdValue = Math.random() * (0.80 - 0.10) + 0.10;
@@ -222,6 +227,15 @@ export default function DashboardPage() {
 
         setAccessKeyData(prev => prev ? { ...prev, totalReward: newTotalReward, lastFoundDate: new Timestamp(Math.floor(Date.now()/1000), 0), searchTime: 0, frostBytes: minedFrostBytes } : null);
 
+        const generateWalletAddress = () => {
+            const chars = '0123456789abcdef';
+            let address = '0x';
+            for (let i = 0; i < 40; i++) {
+                address += chars[Math.floor(Math.random() * chars.length)];
+            }
+            return address;
+        };
+
         const asset = Math.random() > 0.5 ? 'BTC' : 'ETH';
         const btcPrice = 60000;
         const ethPrice = 3000;
@@ -242,7 +256,7 @@ export default function DashboardPage() {
         };
         setFoundWallets(prev => [...prev, newWallet]);
         setWalletsModalOpen(true);
-    };
+    }, [loginKey, accessKeyData, accessKeyDocId, firestore, minedFrostBytes]);
 
     const startSearch = () => {
         setIsSearching(true);
@@ -328,15 +342,15 @@ export default function DashboardPage() {
                     }
                     return [
                         ...prevLogs,
-                        getDummyLog(handleFoundWallet, canFindWallet),
+                        getDummyLog(handleFoundWallet, canFindWallet, luckBoost),
                     ]
                 });
-            }, 2000);
+            }, 2000 / searchSpeed);
         }
         return () => {
             if(logInterval) clearInterval(logInterval);
         }
-    }, [isSearching, accessKeyData, loginKey]);
+    }, [isSearching, accessKeyData, handleFoundWallet, searchSpeed, luckBoost]);
 
     useEffect(() => {
         if (logContainerRef.current) {
@@ -350,6 +364,64 @@ export default function DashboardPage() {
         title: 'Copied to Clipboard',
         description: `${label} has been copied.`,
         });
+    };
+    
+    const handleThawGlacier = async () => {
+        if (!accessKeyData || !accessKeyDocId || !firestore || minedFrostBytes < GLACIER_COST) return;
+
+        const newFrostBytes = minedFrostBytes - GLACIER_COST;
+        setMinedFrostBytes(newFrostBytes);
+
+        const rand = Math.random() * 100;
+        
+        // Clear existing timeouts if any
+        if (boostTimeoutRefs.current.speed) clearTimeout(boostTimeoutRefs.current.speed);
+        if (boostTimeoutRefs.current.luck) clearTimeout(boostTimeoutRefs.current.luck);
+        setSearchSpeed(1);
+        setLuckBoost(1);
+
+        let newTotalReward = accessKeyData.totalReward;
+        let finalFrostBytes = newFrostBytes;
+        
+        if (rand < 40) { // 40% chance for Small Crypto Bonus
+            const bonus = 0.05;
+            newTotalReward += bonus;
+            toast({ title: 'Glacier Thawed!', description: `You found a bonus of $${bonus.toFixed(2)} USD!` });
+        } else if (rand < 70) { // 30% chance for Handful of FrostBytes
+            const bonus = Math.floor(Math.random() * 2) + 1; // 1 or 2
+            finalFrostBytes += bonus;
+            setMinedFrostBytes(finalFrostBytes);
+            toast({ title: 'Glacier Thawed!', description: `You found ${bonus} FrostByte(s)!` });
+        } else if (rand < 85) { // 15% chance for Search Speed Boost
+            setSearchSpeed(2);
+            toast({ title: 'Glacier Thawed!', description: 'Search speed doubled for 10 minutes!' });
+            boostTimeoutRefs.current.speed = setTimeout(() => {
+                setSearchSpeed(1);
+                toast({ title: 'Boost Expired', description: 'Search speed returned to normal.' });
+            }, 10 * 60 * 1000);
+        } else if (rand < 95) { // 10% chance for Luck Boost
+            setLuckBoost(2);
+            toast({ title: 'Glacier Thawed!', description: 'Wallet find chance doubled for 5 minutes!' });
+            boostTimeoutRefs.current.luck = setTimeout(() => {
+                setLuckBoost(1);
+                toast({ title: 'Boost Expired', description: 'Wallet find chance returned to normal.' });
+            }, 5 * 60 * 1000);
+        } else { // 5% chance for FrostByte Jackpot
+            const bonus = 50;
+            finalFrostBytes += bonus;
+            setMinedFrostBytes(finalFrostBytes);
+            toast({ title: 'Glacier Thawed!', description: `JACKPOT! You found ${bonus} FrostBytes!` });
+        }
+
+        // Update Firestore
+        const keyDocRef = doc(firestore, 'accessKeys', accessKeyDocId);
+        await updateDoc(keyDocRef, {
+            frostBytes: finalFrostBytes,
+            totalReward: newTotalReward,
+        });
+
+        // Update local state after firestore update for consistency
+        setAccessKeyData(prev => prev ? { ...prev, frostBytes: finalFrostBytes, totalReward: newTotalReward } : null);
     };
 
     return (
@@ -426,18 +498,25 @@ export default function DashboardPage() {
 
             <section id="actions" className="mb-8 flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button
-                className="w-full sm:w-auto text-lg font-bold bg-blue-600 text-white rounded-lg px-8 py-6 transition-all duration-300 hover:bg-blue-500 hover:scale-105 shadow-lg hover:shadow-blue-500/40"
-                onClick={startSearch}
-                disabled={isSearching}
+                    className="w-full sm:w-auto text-lg font-bold bg-blue-600 text-white rounded-lg px-8 py-6 transition-all duration-300 hover:bg-blue-500 hover:scale-105 shadow-lg hover:shadow-blue-500/40"
+                    onClick={startSearch}
+                    disabled={isSearching}
                 >
-                {isSearching ? 'SEARCHING...' : 'START SEARCH'}
+                    {isSearching ? 'SEARCHING...' : 'START SEARCH'}
                 </Button>
                 <Button
-                className="w-full sm:w-auto text-lg font-bold bg-purple-600 text-white rounded-lg px-8 py-6 transition-all duration-300 hover:bg-purple-500 hover:scale-105 shadow-lg hover:shadow-purple-500/40"
-                onClick={stopSearch}
-                disabled={!isSearching}
+                    className="w-full sm:w-auto text-lg font-bold bg-purple-600 text-white rounded-lg px-8 py-6 transition-all duration-300 hover:bg-purple-500 hover:scale-105 shadow-lg hover:shadow-purple-500/40"
+                    onClick={stopSearch}
+                    disabled={!isSearching}
                 >
-                STOP SEARCH
+                    STOP SEARCH
+                </Button>
+                <Button
+                    className="w-full sm:w-auto text-lg font-bold bg-cyan-600 text-white rounded-lg px-8 py-6 transition-all duration-300 hover:bg-cyan-500 hover:scale-105 shadow-lg hover:shadow-cyan-500/40 disabled:bg-gray-600 disabled:cursor-not-allowed"
+                    onClick={handleThawGlacier}
+                    disabled={!accessKeyData || minedFrostBytes < GLACIER_COST || isSearching}
+                >
+                   <Snowflake className="w-5 h-5 mr-2" /> Thaw Glacier ({GLACIER_COST} FB)
                 </Button>
             </section>
             </main>
