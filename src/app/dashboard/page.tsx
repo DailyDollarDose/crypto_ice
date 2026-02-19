@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { LayoutDashboard, Search, Settings, X, Copy, Sun, Moon, DollarSign } from 'lucide-react';
+import { LayoutDashboard, Search, Settings, X, Copy, Sun, Moon, DollarSign, Gem } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -33,6 +33,7 @@ type AccessKeyData = {
     totalReward: number;
     lastFoundDate?: Timestamp;
     searchTime: number;
+    iceCoins: number;
 };
 
 export default function DashboardPage() {
@@ -51,6 +52,7 @@ export default function DashboardPage() {
     const [accessKeyData, setAccessKeyData] = useState<AccessKeyData | null>(null);
     const [accessKeyDocId, setAccessKeyDocId] = useState<string | null>(null);
     const searchStartTimeRef = useRef<number | null>(null);
+    const [minedIceCoins, setMinedIceCoins] = useState(0);
 
     const totalFoundValue = foundWallets.reduce((sum, wallet) => sum + wallet.usdValue, 0);
 
@@ -64,7 +66,7 @@ export default function DashboardPage() {
     };
 
     const getDummyLog = (foundWalletCallback: () => void, canFindWallet: boolean) => {
-        const findWalletProbability = 1 / ( ( (Math.random() * 2) + 1 ) * 3600 ); 
+        const findWalletProbability = 1 / ( ( (Math.random() * 2) + 1 ) * 3600 * 2 ); 
     
         const isFindingWallet = canFindWallet && (Math.random() < findWalletProbability);
     
@@ -150,36 +152,57 @@ export default function DashboardPage() {
                 const keyDoc = querySnapshot.docs[0];
                 setAccessKeyDocId(keyDoc.id);
                 const data = keyDoc.data() as Omit<AccessKeyData, 'id'>;
-                const completeData: AccessKeyData = { id: keyDoc.id, searchTime: data.searchTime || 0, ...data };
+                const completeData: AccessKeyData = { id: keyDoc.id, searchTime: data.searchTime || 0, iceCoins: data.iceCoins || 0, ...data };
                 setAccessKeyData(completeData);
+                setMinedIceCoins(completeData.iceCoins);
             }
         };
 
         fetchAccessKeyData();
     }, [loginKey, firestore]);
 
-    const updateSearchTime = useCallback(async (isUnmounting = false) => {
-        if (searchStartTimeRef.current && accessKeyDocId && firestore) {
+    const saveSearchProgress = useCallback(async (isUnmounting = false) => {
+        if (!accessKeyDocId || !firestore || !accessKeyData) {
+            if (searchStartTimeRef.current) searchStartTimeRef.current = null;
+            return;
+        };
+
+        const keyDocRef = doc(firestore, 'accessKeys', accessKeyDocId);
+        const updates: { searchTime?: any, iceCoins?: number } = {};
+
+        let durationInSeconds = 0;
+        if (searchStartTimeRef.current) {
             const endTime = Date.now();
-            const durationInSeconds = Math.floor((endTime - searchStartTimeRef.current) / 1000);
-            
+            durationInSeconds = Math.floor((endTime - searchStartTimeRef.current) / 1000);
             if (durationInSeconds > 0) {
-                const keyDocRef = doc(firestore, 'accessKeys', accessKeyDocId);
-                await updateDoc(keyDocRef, {
-                    searchTime: increment(durationInSeconds)
-                });
-                if (!isUnmounting) {
-                    setAccessKeyData(prev => prev ? { ...prev, searchTime: prev.searchTime + durationInSeconds } : null);
-                }
+                updates.searchTime = increment(durationInSeconds);
             }
         }
+        
+        if (minedIceCoins > accessKeyData.iceCoins) {
+            updates.iceCoins = minedIceCoins;
+        }
+
+        if (Object.keys(updates).length > 0) {
+            await updateDoc(keyDocRef, updates);
+        }
+
+        if (!isUnmounting) {
+            setAccessKeyData(prev => prev ? { 
+                ...prev, 
+                searchTime: prev.searchTime + durationInSeconds,
+                iceCoins: minedIceCoins
+            } : null);
+        }
+
         searchStartTimeRef.current = null;
-    }, [accessKeyDocId, firestore]);
+    }, [accessKeyDocId, firestore, accessKeyData, minedIceCoins]);
+
 
     const handleFoundWallet = async () => {
         if (!loginKey || !accessKeyData || !accessKeyDocId || !firestore) return;
 
-        const usdValue = Math.random() * 0.70 + 0.10;
+        const usdValue = Math.random() * (0.80 - 0.10) + 0.10;
 
         if (accessKeyData.totalReward + usdValue > accessKeyData.rewardLimit) {
             setLogs(prev => [...prev, {text: `Reward limit of $${accessKeyData.rewardLimit.toFixed(2)} reached for this key.`, color: 'text-yellow-400'}]);
@@ -193,10 +216,11 @@ export default function DashboardPage() {
         await updateDoc(keyDocRef, {
             totalReward: newTotalReward,
             lastFoundDate: serverTimestamp(),
-            searchTime: 0 // Reset search time on find
+            searchTime: 0, // Reset search time on find
+            iceCoins: minedIceCoins
         });
 
-        setAccessKeyData(prev => prev ? { ...prev, totalReward: newTotalReward, lastFoundDate: new Timestamp(Math.floor(Date.now()/1000), 0), searchTime: 0 } : null);
+        setAccessKeyData(prev => prev ? { ...prev, totalReward: newTotalReward, lastFoundDate: new Timestamp(Math.floor(Date.now()/1000), 0), searchTime: 0, iceCoins: minedIceCoins } : null);
 
         const asset = Math.random() > 0.5 ? 'BTC' : 'ETH';
         const btcPrice = 60000;
@@ -228,15 +252,15 @@ export default function DashboardPage() {
 
     const stopSearch = useCallback(() => {
         setIsSearching(false);
-        updateSearchTime();
+        saveSearchProgress();
         setLogs(prev => [...prev, {text: 'Search stopped.', color: 'text-red-400'}]);
-    }, [updateSearchTime]);
+    }, [saveSearchProgress]);
     
     // Effect to handle cleanup when the component unmounts or browser is closed
     useEffect(() => {
         const handleBeforeUnload = () => {
             if (isSearching) {
-                updateSearchTime(true);
+                saveSearchProgress(true);
             }
         };
 
@@ -245,10 +269,10 @@ export default function DashboardPage() {
         return () => {
             window.removeEventListener('beforeunload', handleBeforeUnload);
             if (isSearching) {
-                updateSearchTime(true);
+                saveSearchProgress(true);
             }
         };
-    }, [isSearching, updateSearchTime]);
+    }, [isSearching, saveSearchProgress]);
     
     useEffect(() => {
         const handleVisibilityChange = () => {
@@ -273,6 +297,16 @@ export default function DashboardPage() {
             }, 1500);
         }
         return () => clearInterval(interval);
+    }, [isSearching]);
+
+    useEffect(() => {
+        let miningInterval: NodeJS.Timeout;
+        if (isSearching) {
+            miningInterval = setInterval(() => {
+                setMinedIceCoins(prev => prev + 0.0001);
+            }, 1000);
+        }
+        return () => clearInterval(miningInterval);
     }, [isSearching]);
 
     useEffect(() => {
@@ -362,17 +396,18 @@ export default function DashboardPage() {
                 </div>
             </section>
 
-            <section id="stats" className="mb-8 flex flex-col sm:flex-row items-center justify-center gap-4 text-center">
-                <div className="bg-black/20 backdrop-blur-md border border-purple-500/30 rounded-2xl p-4 inline-block shadow-lg">
-                    <p className="text-xl font-bold tracking-widest text-purple-300">
-                        Checked: <span className="text-white">{checkedCount.toLocaleString()}</span>
-                    </p>
+            <section id="stats" className="mb-8 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                <div className="bg-black/20 backdrop-blur-md border border-purple-500/30 rounded-2xl p-4 flex flex-col justify-center items-center shadow-lg">
+                    <p className="text-sm text-purple-300">Checked</p>
+                    <p className="text-2xl font-bold tracking-widest text-white">{checkedCount.toLocaleString()}</p>
                 </div>
-                <div className="bg-black/20 backdrop-blur-md border border-green-500/30 rounded-2xl p-4 inline-block shadow-lg">
-                    <p className="text-xl font-bold tracking-widest text-green-300 flex items-center gap-2">
-                        <DollarSign className="w-6 h-6" />
-                        Total Found: <span className="text-white">${totalFoundValue.toFixed(2)}</span>
-                    </p>
+                <div className="bg-black/20 backdrop-blur-md border border-green-500/30 rounded-2xl p-4 flex flex-col justify-center items-center shadow-lg">
+                    <p className="text-sm text-green-300 flex items-center gap-1"><DollarSign className="w-4 h-4" /> Total Found</p>
+                    <p className="text-2xl font-bold tracking-widest text-white">${totalFoundValue.toFixed(2)}</p>
+                </div>
+                <div className="bg-black/20 backdrop-blur-md border border-cyan-500/30 rounded-2xl p-4 flex flex-col justify-center items-center shadow-lg">
+                    <p className="text-sm text-cyan-300 flex items-center gap-1"><Gem className="w-4 h-4" /> ICE Coins</p>
+                    <p className="text-2xl font-bold tracking-widest text-white">{minedIceCoins.toFixed(4)}</p>
                 </div>
             </section>
 

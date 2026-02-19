@@ -40,6 +40,10 @@
         "searchTime": {
             "type": "number",
             "description": "Accumulated search time in seconds since the last wallet was found, used for cooldown."
+        },
+        "iceCoins": {
+            "type": "number",
+            "description": "The amount of simulated ICE coin the user has mined."
         }
       },
       "required": [
