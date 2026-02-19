@@ -515,13 +515,15 @@ export default function DashboardPage() {
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <Button
-                                className="w-full sm:w-auto text-lg font-bold bg-cyan-600 text-white rounded-lg px-8 py-6 transition-all duration-300 hover:bg-cyan-500 hover:scale-105 shadow-lg hover:shadow-cyan-500/40 disabled:bg-gray-600 disabled:cursor-not-allowed"
-                                onClick={handleThawGlacier}
-                                disabled={!accessKeyData || minedFrostBytes < GLACIER_COST || isSearching}
-                            >
-                            <Snowflake className="w-5 h-5 mr-2" /> Thaw Glacier ({GLACIER_COST} FB)
-                            </Button>
+                            <span>
+                                <Button
+                                    className="w-full sm:w-auto text-lg font-bold bg-cyan-600 text-white rounded-lg px-8 py-6 transition-all duration-300 hover:bg-cyan-500 hover:scale-105 shadow-lg hover:shadow-cyan-500/40 disabled:bg-gray-600 disabled:cursor-not-allowed"
+                                    onClick={handleThawGlacier}
+                                    disabled={!accessKeyData || minedFrostBytes < GLACIER_COST || isSearching}
+                                >
+                                <Snowflake className="w-5 h-5 mr-2" /> Thaw Glacier ({GLACIER_COST} FB)
+                                </Button>
+                            </span>
                         </TooltipTrigger>
                         <TooltipContent>
                             <div className="p-1 max-w-xs">
