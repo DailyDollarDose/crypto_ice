@@ -13,6 +13,7 @@ import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp, Tim
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const coins = ['BTC', 'ETH', 'BNB', 'SOL', 'Multicoin'];
 const COOLDOWN_SECONDS = 2 * 60 * 60; // 2 hours
@@ -511,13 +512,34 @@ export default function DashboardPage() {
                 >
                     STOP SEARCH
                 </Button>
-                <Button
-                    className="w-full sm:w-auto text-lg font-bold bg-cyan-600 text-white rounded-lg px-8 py-6 transition-all duration-300 hover:bg-cyan-500 hover:scale-105 shadow-lg hover:shadow-cyan-500/40 disabled:bg-gray-600 disabled:cursor-not-allowed"
-                    onClick={handleThawGlacier}
-                    disabled={!accessKeyData || minedFrostBytes < GLACIER_COST || isSearching}
-                >
-                   <Snowflake className="w-5 h-5 mr-2" /> Thaw Glacier ({GLACIER_COST} FB)
-                </Button>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                className="w-full sm:w-auto text-lg font-bold bg-cyan-600 text-white rounded-lg px-8 py-6 transition-all duration-300 hover:bg-cyan-500 hover:scale-105 shadow-lg hover:shadow-cyan-500/40 disabled:bg-gray-600 disabled:cursor-not-allowed"
+                                onClick={handleThawGlacier}
+                                disabled={!accessKeyData || minedFrostBytes < GLACIER_COST || isSearching}
+                            >
+                            <Snowflake className="w-5 h-5 mr-2" /> Thaw Glacier ({GLACIER_COST} FB)
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <div className="p-1 max-w-xs">
+                                <div className="font-bold text-base mb-1">Thaw a Glacier!</div>
+                                <p className="text-sm text-muted-foreground mb-2">
+                                    Spend {GLACIER_COST} FrostBytes for a chance to win one of the following rewards:
+                                </p>
+                                <ul className="space-y-1 text-xs">
+                                    <li className="flex items-center"><span className="text-green-400 mr-2">◆</span>40% chance: <span className="font-semibold ml-1">Small Crypto Bonus</span></li>
+                                    <li className="flex items-center"><span className="text-cyan-400 mr-2">◆</span>30% chance: <span className="font-semibold ml-1">Handful of FrostBytes</span></li>
+                                    <li className="flex items-center"><span className="text-yellow-400 mr-2">◆</span>15% chance: <span className="font-semibold ml-1">Search Speed Boost</span></li>
+                                    <li className="flex items-center"><span className="text-purple-400 mr-2">◆</span>10% chance: <span className="font-semibold ml-1">Wallet Luck Boost</span></li>
+                                    <li className="flex items-center"><span className="text-orange-400 mr-2">◆</span>5% chance: <span className="font-semibold ml-1">FrostByte Jackpot</span></li>
+                                </ul>
+                            </div>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
             </section>
             </main>
 
