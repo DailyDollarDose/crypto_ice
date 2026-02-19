@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -33,7 +32,6 @@ type AccessKeyData = {
     rewardLimit: number;
     totalReward: number;
     lastFoundDate?: Timestamp;
-    limitResetDate?: Timestamp;
     searchTime: number;
 };
 
@@ -182,7 +180,7 @@ export default function DashboardPage() {
         const usdValue = Math.random() * 0.80 + 0.10;
 
         if (accessKeyData.totalReward + usdValue > accessKeyData.rewardLimit) {
-            setLogs(prev => [...prev, {text: `Reward limit of $${accessKeyData.rewardLimit.toFixed(2)} reached for this month.`, color: 'text-yellow-400'}]);
+            setLogs(prev => [...prev, {text: `Reward limit of $${accessKeyData.rewardLimit.toFixed(2)} reached for this key.`, color: 'text-yellow-400'}]);
             return;
         }
 
@@ -281,7 +279,7 @@ export default function DashboardPage() {
             
             let canFindWallet = !hasReachedLimit;
 
-            if (canFindWallet && accessKeyData?.lastFoundDate && foundWallets.length > 0) {
+            if (canFindWallet && accessKeyData?.lastFoundDate) {
                  if (accessKeyData.searchTime < COOLDOWN_SECONDS) {
                     canFindWallet = false;
                  }
@@ -303,7 +301,7 @@ export default function DashboardPage() {
         return () => {
             if(logInterval) clearInterval(logInterval);
         }
-    }, [isSearching, accessKeyData, loginKey, foundWallets.length]);
+    }, [isSearching, accessKeyData, loginKey]);
 
     useEffect(() => {
         if (logContainerRef.current) {

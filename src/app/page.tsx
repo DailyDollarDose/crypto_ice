@@ -66,9 +66,8 @@ export default function Home() {
                 key: accessKey,
                 isValid: true,
                 purchaseDate: new Date().toISOString(),
-                rewardLimit: Math.floor(Math.random() * (8 - 5 + 1)) + 5,
+                rewardLimit: Math.floor(Math.random() * (15 - 5 + 1)) + 5, // 5 to 15
                 totalReward: 0,
-                limitResetDate: serverTimestamp(),
                 lastFoundDate: null,
                 searchTime: 0,
             };
@@ -113,19 +112,10 @@ export default function Home() {
       const keyDocRef = doc(firestore, 'accessKeys', keyDoc.id);
 
       const updates: any = {};
-      const now = new Date();
-      const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-
-      const needsReset = !keyData.limitResetDate || keyData.limitResetDate.toDate() < oneMonthAgo;
-
-      if (needsReset) {
-        updates.rewardLimit = Math.floor(Math.random() * (8 - 5 + 1)) + 5; // Random limit between 5 and 8
+      
+      if (keyData.rewardLimit === undefined) {
+        updates.rewardLimit = Math.floor(Math.random() * (15 - 5 + 1)) + 5;
         updates.totalReward = 0;
-        updates.limitResetDate = serverTimestamp();
-      } else if (keyData.rewardLimit === undefined) {
-        updates.rewardLimit = Math.floor(Math.random() * (8 - 5 + 1)) + 5; // Set initial random limit
-        updates.totalReward = 0;
-        updates.limitResetDate = serverTimestamp();
       }
 
       if (keyData.lastFoundDate === undefined) {
