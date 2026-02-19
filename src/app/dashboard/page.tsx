@@ -98,10 +98,6 @@ export default function DashboardPage() {
             color: 'text-gray-400',
         },
         {
-            text: 'Patience is key. The biggest rewards take time.',
-            color: 'text-cyan-400',
-        },
-        {
             text: 'Error: Timeout while fetching transaction history.',
             color: 'text-red-400',
         },
@@ -114,24 +110,12 @@ export default function DashboardPage() {
             color: 'text-gray-400',
         },
         {
-            text: 'Stay focused. Every check brings you closer.',
-            color: 'text-cyan-400',
-        },
-        {
             text: `Found vulnerable wallet: ${generateWalletAddress()}`,
             color: 'text-yellow-400',
         },
         {
             text: `Bypassing security... wallet: ${generateWalletAddress()}`,
             color: 'text-purple-400',
-        },
-        {
-            text: 'The search for treasure requires persistence. Keep going.',
-            color: 'text-cyan-400',
-        },
-        {
-            text: 'Success is not final, failure is not fatal: it is the courage to continue that counts.',
-            color: 'text-green-400',
         },
         ];
         return dummyLogOptions[Math.floor(Math.random() * dummyLogOptions.length)];
